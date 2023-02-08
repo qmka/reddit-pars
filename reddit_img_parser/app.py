@@ -1,13 +1,14 @@
 import requests
 import os
-import sqlite3
+import json
 from progress.bar import Bar
+from fake_useragent import UserAgent
 
 
 def download_json(subreddit, suffix):
-    
+    user_agent = UserAgent()
     url = 'https://www.reddit.com/r/' + subreddit + '/new/.json' + suffix
-    headers = {'User-Agent': 'Mozilla/5.0 (Macintosh; U; Intel Mac OS X 10.4; en-US; rv:1.9.2.2) Gecko/20100316 Firefox/3.6.2'}
+    headers = {'User-Agent': user_agent.chrome}
     timeout = 5
 
     try:
@@ -24,23 +25,31 @@ def download_json(subreddit, suffix):
 def get_pictures(parsed_data):
 
     entries = parsed_data['data']['children']
-    pic_urls = []
+    pic_data = []
 
     for entry in entries:
-        # print(entry['data']['title'])
-
-        # make list of pic urls
-        pic_urls.append(entry['data']['url'])
+        data = entry['data']
+        pic_data.append({
+            'title': data['title'],
+            'name': data['name'],
+            'url': data['url'],
+            'upvote_ratio': data['upvote_ratio'],
+            'ups': data['ups']
+        })
     
-    folder = "images"
+    last_entry_name = entries[-1]['data']['name']
+    suffix = f"?after={last_entry_name}" 
+
+    return pic_data, suffix
+
+
+def save_pictures(pic_urls, folder):
+
+    user_agent = UserAgent()
 
     if not os.path.exists(folder):
         os.makedirs(folder)
 
-    conn = sqlite3.connect("downloads.db")
-    cursor = conn.cursor()
-
-    
     for url in pic_urls:
         filename = os.path.basename(url)
         file_extension = os.path.splitext(filename)[1]
@@ -48,15 +57,13 @@ def get_pictures(parsed_data):
             print(f"{filename} does not have an extension, skipping")
             continue
         filepath = os.path.join(folder, filename)
-        cursor.execute("SELECT name FROM files WHERE name=?", (filename,))
-        result = cursor.fetchone()
 
-        if result:
-            print(f"{filename} already exists in the database, skipping download")
+        if os.path.isfile(filepath):
+            print(f"{filename} already in this folder, skipping")
             continue
 
         try:
-            headers = {'User-Agent': 'Mozilla/5.0 (Macintosh; U; Intel Mac OS X 10.4; en-US; rv:1.9.2.2) Gecko/20100316 Firefox/3.6.2'}
+            headers = {'User-Agent': user_agent.chrome}
             timeout = 5
             response = requests.get(url, headers=headers, timeout=timeout, stream=True)
 
@@ -74,49 +81,36 @@ def get_pictures(parsed_data):
                         bar.next(len(data))
                 bar.finish()
                     
-                cursor.execute("INSERT INTO files (name) VALUES (?)", (filename,))
-                conn.commit()
                 print(f"{filename} saved")
             else:
                 print(f"{filename} could not be downloaded")
         except requests.exceptions.RequestException as e:
             print(f"Error while downloading {filename}: {e}")
     
-    conn.close()
-
-    # определяем суффикс
-    # берем последний элемент
-    last_entry_name = entries[-1]['data']['name']
-    suffix = f"?after={last_entry_name}"
-    return suffix   
-
-
-
-def check_db():
-    folder = "images"
-
-    conn = sqlite3.connect("downloads.db")
-    cursor = conn.cursor()
-    cursor.execute("CREATE TABLE IF NOT EXISTS files (name TEXT PRIMARY KEY)")
-    cursor.execute("SELECT name FROM files")
-    results = cursor.fetchall()
-
-    for result in results:
-        filename = result[0]
-        filepath = os.path.join(folder, filename)
-        if not os.path.exists(filepath):
-            cursor.execute("DELETE FROM files WHERE name=?", (filename,))
-            conn.commit()
-            print(f"{filename} not found in the folder, removing from the database")
-
-    conn.close()
 
 def parser():
     subreddit = 'wallpapers'
     suffix = ''
-    depth = int(input("Select depth of subreddit downloading: "))
+    folder = 'images'
+    
+    depth = int(input("Select depth of subreddit downloading (not more than 40): "))
+    # score = int(input("How many ups: "))
     for i in range(depth):
-        data = download_json(subreddit, suffix)
-        check_db()
-        # по-хорошему надо сделать так, чтобы парсинг шёл отдельно, а загрузка отдельно
-        suffix = get_pictures(data)
+        print(f"Range {i}")
+        # 1. Загружаем json
+        raw_data = download_json(subreddit, suffix)
+
+        with open('json_data.json', 'w') as outfile:
+            json.dump(raw_data, outfile)
+
+        # 2. Парсим
+        links = []
+        pictures, suffix = get_pictures(raw_data)
+        for pic in pictures:
+            links.append(pic['url'])
+
+        # 3. Сохраняем на диск
+        save_pictures(links, folder)
+
+        
+
