@@ -1,6 +1,5 @@
 import requests
 import os
-import json
 from progress.bar import Bar
 from fake_useragent import UserAgent
 
