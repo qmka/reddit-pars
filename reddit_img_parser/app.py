@@ -51,10 +51,17 @@ def save_pictures(pic_urls, folder):
 
     for url in pic_urls:
         filename = os.path.basename(url)
+        filename_without_ex = os.path.splitext(filename)[0]
         file_extension = os.path.splitext(filename)[1]
         if not file_extension:
             print(f"{filename} does not have an extension, skipping")
             continue
+
+        # gifv to mp4
+        if file_extension == ".gifv":
+            filename = f"{filename_without_ex}.mp4"
+            url = f"https://i.imgur.com/{filename}"
+
         filepath = os.path.join(folder, filename)
 
         if os.path.isfile(filepath):
