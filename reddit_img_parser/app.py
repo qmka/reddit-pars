@@ -2,6 +2,16 @@ import requests
 import os
 from progress.bar import Bar
 from fake_useragent import UserAgent
+from reddit_img_parser.rg import is_rg, get_rg_id, download_rg
+
+
+def remove_query_string(filename):
+    name, extension = os.path.splitext(filename)
+    if extension:
+        extension_without_query = extension.split("?")[0]
+    else:
+        extension_without_query = ""
+    return name + extension_without_query
 
 
 def download_json(subreddit, tail):
@@ -10,7 +20,7 @@ def download_json(subreddit, tail):
     url = 'https://www.reddit.com/r/' + subreddit + '/' + tail
     headers = {'User-Agent': user_agent.chrome}
     timeout = 5
-
+    print(f"Link to JSON: {url}")
     try:
         response = requests.get(url, headers=headers, timeout=timeout)
         response.raise_for_status()
@@ -42,85 +52,158 @@ def get_pictures(parsed_data):
     return pic_data, last_entry_name
 
 
-def save_pictures(pic_urls, folder):
-
+def download_by_direct_link(url, folder):
+    # возвращает статус скачивания
     user_agent = UserAgent()
+    filename = os.path.basename(url)
+    filepath = os.path.join(folder, filename)
 
-    if not os.path.exists(folder):
-        os.makedirs(folder)
+    try:
+        headers = {'User-Agent': user_agent.chrome}
+        timeout = 5
+        response = requests.get(
+            url,
+            headers=headers,
+            timeout=timeout,
+            stream=True)
 
-    for url in pic_urls:
-        filename = os.path.basename(url)
-        filename_without_ex = os.path.splitext(filename)[0]
-        file_extension = os.path.splitext(filename)[1]
-        if not file_extension:
-            print(f"{filename} does not have an extension, skipping")
-            continue
-
-        # gifv to mp4
-        if file_extension == ".gifv":
-            filename = f"{filename_without_ex}.mp4"
-            url = f"https://i.imgur.com/{filename}"
-
-        filepath = os.path.join(folder, filename)
-
-        if os.path.isfile(filepath):
-            print(f"{filename} already in this folder, skipping")
-            continue
-
-        try:
-            headers = {'User-Agent': user_agent.chrome}
-            timeout = 5
-            response = requests.get(
-                url,
-                headers=headers,
-                timeout=timeout,
-                stream=True)
-
-            if response.status_code == 200:
-                total_length = int(response.headers.get("Content-Length", 0))
-                block_size = 1024
-                written = 0
-                bar = Bar('Downloading', max=None, suffix='%(percent)d%%')
-                with open(filepath, "wb") as f:
-                    for data in response.iter_content(block_size):
-                        written = written + len(data)
-                        f.write(data)
-                        if bar.max is None:
-                            bar.max = max(written, total_length)
-                        bar.next(len(data))
-                bar.finish()
-
-                print(f"{filename} saved")
-            else:
-                print(f"{filename} could not be downloaded")
-        except requests.exceptions.RequestException as e:
-            print(f"Error while downloading {filename}: {e}")
+        if response.status_code == 200:
+            total_length = int(response.headers.get("Content-Length", 0))
+            block_size = 1024
+            written = 0
+            bar = Bar('Downloading', max=None, suffix='%(percent)d%%')
+            with open(filepath, "wb") as f:
+                for data in response.iter_content(block_size):
+                    written = written + len(data)
+                    f.write(data)
+                    if bar.max is None:
+                        bar.max = max(written, total_length)
+                    bar.next(len(data))
+            bar.finish()
+        return response.status_code
+    except requests.exceptions.RequestException as e:
+        print(f"Error while downloading {filename}: {e}")
 
 
 def parser(subreddit, url_tail, depth, folder):
+    file_counter = 0
     suffix = ''
+    if not os.path.exists(folder):
+        os.mkdir(folder)
 
     for i in range(depth):
-        print(f"Range {i}")
+        print('---------------------------------------------------')
+        print(f"Trying to download pics json in range {i}")
         # 1. Загружаем json
         raw_data = download_json(subreddit, f"{url_tail}{suffix}")
+        print('Success!')
+        '''
+        with open('test_json.json', 'w') as f:
+            json.dump(raw_data, f)
+        '''
 
         # 2. Парсим
-        links = []
+
         pictures, last_entry_name = get_pictures(raw_data)
 
-        # 2.5 Делаем суффикс в зависимости от глубины
+        # 3. Обходим все картинки
+        for pic in pictures:
+            file_counter += 1
+
+            rg_id = ''
+            readed_data = ''
+            type = ''
+            # Взяли первую картинку. Извлекли из неё линк
+            url = pic['url']
+
+            # Готовим данные для скачивания
+            # def download_by_direct_link(url, folder)
+
+            filename = remove_query_string(os.path.basename(url))
+            filename_without_ex = os.path.splitext(filename)[0]
+            file_extension = os.path.splitext(filename)[1]
+            print('---------------------------------------------------')
+            print(f"{file_counter}. Trying to download file: {filename}")
+
+            common_extensions = ['.jpg', '.gif', '.jpeg', '.mp4', '.png']
+
+            # 3. Определяем тип файла
+            if file_extension in common_extensions:
+                type = 'common'
+            elif file_extension == '.gifv':
+                type = 'gifv'
+            else:
+                # это папка???
+                if url[-1] == '/':
+                    print("It's a folder, passing")
+                    continue
+                # rg?
+                # качаем
+                print('For this type of file we need to download additional info')
+                # print(f"URL is {url} ... folder is {folder}")
+                status = download_by_direct_link(url, folder)
+                if status != 200:
+                    print(f"{filename} could not be downloaded. Response status code is {status}")
+                    continue
+                else:
+                    # если скачали, то загружаем и парсим
+                    filepath = os.path.join(folder, filename)
+                    with open(filepath, 'r') as f:
+                        readed_data = f.read()
+                    os.remove(filepath)
+                    if is_rg(readed_data):
+                        type = 'rg'
+                    else:
+                        type = 'other'
+
+            # 4. Если тип - 'other', то не скачиваем, переходим к след. файлу
+            if type == 'other':
+                continue
+
+            # 5. Проверяем, есть ли данный файл в папке
+            if type == 'common':
+                filepath = os.path.join(folder, filename)
+
+            if type == 'gifv':
+                filename = f"{filename_without_ex}.mp4"
+                filepath = os.path.join(folder, filename)
+
+            if type == 'rg':
+                # Получаем имя файла redgif
+                rg_id = get_rg_id(readed_data)
+                final_filename = f"{rg_id}.mp4"
+                filepath = os.path.join(folder, final_filename)
+                # print(filepath)
+                # print(os.path.isfile(filepath))
+
+            if os.path.isfile(filepath):
+                print(f"{filename} already in this folder, skipping")
+                continue
+
+            # 6. Качаем
+
+            if type in ['common', 'gifv']:
+                if type == "gifv":
+                    filename = f"{filename_without_ex}.mp4"
+                    url = f"https://i.imgur.com/{filename}"
+                    print(f"GIFV file will be converted to {filename}")
+                status = download_by_direct_link(url, folder)
+                if status == 200:
+                    print(f"{filename} saved")
+                else:
+                    print(f"{filename} could not be downloaded. Response status code is {status}")
+
+            if type == 'rg':
+                print(f"{filename} will be downloaded with external module...")
+                print("Downloading |####### no progress bar ########|")
+                download_rg(rg_id, filepath)
+                print(f"{filename} saved")
+
+        # Готовимся к следующему уровню погружения
         if url_tail.find("?") == -1:
             suffix = f"?after={last_entry_name}"
         else:
             suffix = f"&after={last_entry_name}"
-
-        for pic in pictures:
-            links.append(pic['url'])
-
-        # 3. Сохраняем на диск
-        save_pictures(links, folder)
 
 
 def ui():
