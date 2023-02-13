@@ -3,7 +3,9 @@ from bs4 import BeautifulSoup
 
 
 def is_rg(file):
-    return file.find("redgifs.com")
+    if file.find("redgifs.com") == -1:
+        return False
+    return True
 
 
 def get_rg_id(file):
