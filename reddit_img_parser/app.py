@@ -5,6 +5,10 @@ from fake_useragent import UserAgent
 from reddit_img_parser.rg import is_rg, get_rg_id, download_rg
 
 
+def is_imgur_no_ex(file):
+    return file.find("https://s.imgur.com")
+
+
 def remove_query_string(filename):
     name, extension = os.path.splitext(filename)
     if extension:
@@ -137,7 +141,8 @@ def parser(subreddit, url_tail, depth, folder):
                 if url[-1] == '/':
                     print("It's a folder, passing")
                     continue
-                # rg?
+
+                # rg? imgur no ex?
                 # качаем
                 print('For this type of file we need to download additional info')
                 # print(f"URL is {url} ... folder is {folder}")
@@ -153,9 +158,11 @@ def parser(subreddit, url_tail, depth, folder):
                     os.remove(filepath)
                     if is_rg(readed_data):
                         type = 'rg'
+                    elif is_imgur_no_ex(readed_data):
+                        type = 'imgur_no_ex'
                     else:
                         type = 'other'
-
+            # print(f"TYPE IS {type}")
             # 4. Если тип - 'other', то не скачиваем, переходим к след. файлу
             if type == 'other':
                 continue
@@ -166,6 +173,10 @@ def parser(subreddit, url_tail, depth, folder):
 
             if type == 'gifv':
                 filename = f"{filename_without_ex}.mp4"
+                filepath = os.path.join(folder, filename)
+
+            if type == 'imgur_no_ex':
+                filename = f"{filename_without_ex}.jpeg"
                 filepath = os.path.join(folder, filename)
 
             if type == 'rg':
@@ -182,11 +193,15 @@ def parser(subreddit, url_tail, depth, folder):
 
             # 6. Качаем
 
-            if type in ['common', 'gifv']:
+            if type in ['common', 'gifv', 'imgur_no_ex']:
                 if type == "gifv":
                     filename = f"{filename_without_ex}.mp4"
                     url = f"https://i.imgur.com/{filename}"
                     print(f"GIFV file will be converted to {filename}")
+                if type == 'imgur_no_ex':
+                    filename = f"{filename_without_ex}.jpeg"
+                    url = f"https://i.imgur.com/{filename}"
+                    print(f"File will be saved as {filename}")
                 status = download_by_direct_link(url, folder)
                 if status == 200:
                     print(f"{filename} saved")
