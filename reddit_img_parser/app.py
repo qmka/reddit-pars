@@ -7,6 +7,9 @@ from reddit_img_parser.rg import is_rg, get_rg_id, download_rg
 from reddit_img_parser.utils import log
 
 
+ROOT_FOLDER = 'images'
+
+
 def is_imgur_no_ex(file):
     return file.find("https://s.imgur.com")
 
@@ -193,6 +196,14 @@ def get_file(url, folder, counter):
 def parser(subreddit, url_tail, depth, folder):
     file_counter = 0
     suffix = ''
+    # if not os.path.exists(folder):
+    #    os.mkdir(folder)
+    
+    if not os.path.exists(ROOT_FOLDER):
+        os.mkdir(ROOT_FOLDER)
+
+    # Create a subfolder inside the folder
+    folder = os.path.join(ROOT_FOLDER, folder)
     if not os.path.exists(folder):
         os.mkdir(folder)
 
