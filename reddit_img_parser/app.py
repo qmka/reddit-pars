@@ -90,7 +90,7 @@ def get_file(url, folder):
     filename = remove_query_string(os.path.basename(url))
     filename_without_ex = os.path.splitext(filename)[0]
     file_extension = os.path.splitext(filename)[1]
-    
+
     log("Trying to download file: {filename}", filename=filename)
 
     common_extensions = ['.jpg', '.gif', '.jpeg', '.mp4', '.png']
@@ -185,7 +185,7 @@ def parser(subreddit, url_tail, depth, folder):
     suffix = ''
     # if not os.path.exists(folder):
     #    os.mkdir(folder)
-    
+
     if not os.path.exists(ROOT_FOLDER):
         os.mkdir(ROOT_FOLDER)
 
@@ -213,19 +213,19 @@ def parser(subreddit, url_tail, depth, folder):
         # 3. Обходим все картинки
         for pic in pictures:
             log('---------------------------------------------------')
-                        
+
             file_counter += 1
             url = pic['url']
             title = pic['title']
             author = pic['author']
-            permalink = pic['permalink']
+
             # log("{file_counter}. POST: {permalink}", file_counter=file_counter, permalink=permalink)
             log('{file_counter}. {title}', file_counter=file_counter, title=title)
             log('AUTHOR: {author}', author=author)
             log('URL: {url}', url=url)
 
             get_file(url, folder)
-            
+
         # Готовимся к следующему уровню погружения
         if url_tail.find("?") == -1:
             suffix = f"?after={last_entry_name}"
