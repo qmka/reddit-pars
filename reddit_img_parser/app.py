@@ -4,23 +4,10 @@ import json
 from progress.bar import Bar
 from fake_useragent import UserAgent
 from reddit_img_parser.rg import is_rg, get_rg_id, download_rg
-from reddit_img_parser.utils import log
+from reddit_img_parser.utils import log, is_imgur_no_ex, remove_query_string
 
 
 ROOT_FOLDER = 'images'
-
-
-def is_imgur_no_ex(file):
-    return file.find("https://s.imgur.com")
-
-
-def remove_query_string(filename):
-    name, extension = os.path.splitext(filename)
-    if extension:
-        extension_without_query = extension.split("?")[0]
-    else:
-        extension_without_query = ""
-    return name + extension_without_query
 
 
 def download_json(subreddit, tail):
