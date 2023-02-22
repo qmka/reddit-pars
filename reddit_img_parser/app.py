@@ -1,8 +1,10 @@
 import requests
 import os
+import json
 from progress.bar import Bar
 from fake_useragent import UserAgent
 from reddit_img_parser.rg import is_rg, get_rg_id, download_rg
+from reddit_img_parser.utils import log
 
 
 def is_imgur_no_ex(file):
@@ -24,16 +26,16 @@ def download_json(subreddit, tail):
     url = 'https://www.reddit.com/r/' + subreddit + '/' + tail
     headers = {'User-Agent': user_agent.chrome}
     timeout = 5
-    print(f"Link to JSON: {url}")
+    log("Link to JSON: {url}", url=url)
     try:
         response = requests.get(url, headers=headers, timeout=timeout)
         response.raise_for_status()
         return response.json()
 
     except requests.exceptions.HTTPError as err:
-        print("Failed to download data:", err)
+        log("Failed to download data: {err}", err=err)
     except requests.exceptions.RequestException as err:
-        print("Error during request:", err)
+        log("Error during request: {err}", err=err)
 
 
 def get_pictures(parsed_data):
@@ -48,7 +50,8 @@ def get_pictures(parsed_data):
             'name': data['name'],
             'url': data['url'],
             'upvote_ratio': data['upvote_ratio'],
-            'ups': data['ups']
+            'ups': data['ups'],
+            'author': data['author']
         })
 
     last_entry_name = entries[-1]['data']['name']
@@ -86,7 +89,7 @@ def download_by_direct_link(url, folder):
             bar.finish()
         return response.status_code
     except requests.exceptions.RequestException as e:
-        print(f"Error while downloading {filename}: {e}")
+        log("Error while downloading {filename}: {e}", filename=filename, e=e)
 
 
 def get_file(url, folder, counter):
@@ -97,8 +100,8 @@ def get_file(url, folder, counter):
     filename = remove_query_string(os.path.basename(url))
     filename_without_ex = os.path.splitext(filename)[0]
     file_extension = os.path.splitext(filename)[1]
-    print('---------------------------------------------------')
-    print(f"{counter}. Trying to download file: {filename}")
+    
+    log("{counter}. Trying to download file: {filename}", counter=counter, filename=filename)
 
     common_extensions = ['.jpg', '.gif', '.jpeg', '.mp4', '.png']
 
@@ -110,16 +113,16 @@ def get_file(url, folder, counter):
     else:
         # это папка???
         if url[-1] == '/':
-            print("It's a folder, passing")
+            log("It's a folder, passing")
             return
 
         # rg? imgur no ex?
         # качаем
-        print('For this type of file we need to download additional info')
+        log('For this type of file we need to download additional info')
         # print(f"URL is {url} ... folder is {folder}")
         status = download_by_direct_link(url, folder)
         if status != 200:
-            print(f"{filename} could not be downloaded. Response status code is {status}")
+            log("{filename} could not be downloaded. Response status code is {status}", filename=filename, status=status)
             return
         else:
             # если скачали, то загружаем и парсим
@@ -136,7 +139,7 @@ def get_file(url, folder, counter):
     # print(f"TYPE IS {type}")
     # 4. Если тип - 'other', то не скачиваем, переходим к след. файлу
     if type == 'other':
-        print(f"{filename} doesn't supported, skipping")
+        log("{filename} doesn't supported, skipping", filename=filename)
         return
 
     # 5. Проверяем, есть ли данный файл в папке
@@ -160,7 +163,7 @@ def get_file(url, folder, counter):
         # print(os.path.isfile(filepath))
 
     if os.path.isfile(filepath):
-        print(f"{filename} already in this folder, skipping")
+        log("{filename} already in this folder, skipping", filename=filename)
         return
 
     # 6. Качаем
@@ -169,22 +172,22 @@ def get_file(url, folder, counter):
         if type == "gifv":
             filename = f"{filename_without_ex}.mp4"
             url = f"https://i.imgur.com/{filename}"
-            print(f"GIFV file will be converted to {filename}")
+            log("GIFV file will be converted to {filename}", filename=filename)
         if type == 'imgur_no_ex':
             filename = f"{filename_without_ex}.jpeg"
             url = f"https://i.imgur.com/{filename}"
-            print(f"File will be saved as {filename}")
+            log("File will be saved as {filename}", filename=filename)
         status = download_by_direct_link(url, folder)
         if status == 200:
-            print(f"{filename} saved")
+            log("{filename} saved", filename=filename)
         else:
-            print(f"{filename} could not be downloaded. Response status code is {status}")
+            log("{filename} could not be downloaded. Response status code is {status}", filename=filename, status=status)
 
     if type == 'rg':
-        print(f"{filename} will be downloaded with external module...")
+        log("{filename} will be downloaded with external module...", filename=filename)
         print("Downloading |####### no progress bar ########|")
         download_rg(rg_id, filepath)
-        print(f"{filename} saved")
+        log("{filename} saved", filename=filename)
 
 
 def parser(subreddit, url_tail, depth, folder):
@@ -194,15 +197,15 @@ def parser(subreddit, url_tail, depth, folder):
         os.mkdir(folder)
 
     for i in range(depth):
-        print('---------------------------------------------------')
-        print(f"Trying to download pics json in range {i}")
+        log('---------------------------------------------------')
+        log("Trying to download pics json in range {i}", i=i)
         # 1. Загружаем json
         raw_data = download_json(subreddit, f"{url_tail}{suffix}")
-        print('Success!')
-        '''
+        log('Success!')
+        #'''
         with open('test_json.json', 'w') as f:
             json.dump(raw_data, f)
-        '''
+        #'''
 
         # 2. Парсим
 
@@ -210,6 +213,7 @@ def parser(subreddit, url_tail, depth, folder):
 
         # 3. Обходим все картинки
         for pic in pictures:
+            log('---------------------------------------------------')
             file_counter += 1
             url = pic['url']
             get_file(url, folder, file_counter)
@@ -269,4 +273,4 @@ def ui():
 
     parser(subreddit, url_tail, depth, folder)
 
-    print('Parsing completed!')
+    log('Parsing completed!')
