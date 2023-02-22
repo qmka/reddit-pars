@@ -13,7 +13,6 @@ def get_rg_id(file):
     soup.prettify()
     link_with_id = soup.select("[rel='canonical']")[0]['href']
     id = link_with_id.split('/')[-1]
-    print(id)
     return id
 
 

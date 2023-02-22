@@ -1,6 +1,5 @@
 import requests
 import os
-import json
 from progress.bar import Bar
 from fake_useragent import UserAgent
 from reddit_img_parser.rg import is_rg, get_rg_id, download_rg
@@ -41,7 +40,8 @@ def get_pictures(parsed_data):
             'url': data['url'],
             'upvote_ratio': data['upvote_ratio'],
             'ups': data['ups'],
-            'author': data['author']
+            'author': data['author'],
+            'permalink': data['permalink']
         })
 
     last_entry_name = entries[-1]['data']['name']
@@ -82,7 +82,7 @@ def download_by_direct_link(url, folder):
         log("Error while downloading {filename}: {e}", filename=filename, e=e)
 
 
-def get_file(url, folder, counter):
+def get_file(url, folder):
     rg_id = ''
     readed_data = ''
     type = ''
@@ -91,7 +91,7 @@ def get_file(url, folder, counter):
     filename_without_ex = os.path.splitext(filename)[0]
     file_extension = os.path.splitext(filename)[1]
     
-    log("{counter}. Trying to download file: {filename}", counter=counter, filename=filename)
+    log("Trying to download file: {filename}", filename=filename)
 
     common_extensions = ['.jpg', '.gif', '.jpeg', '.mp4', '.png']
 
@@ -200,10 +200,11 @@ def parser(subreddit, url_tail, depth, folder):
         # 1. Загружаем json
         raw_data = download_json(subreddit, f"{url_tail}{suffix}")
         log('Success!')
-        #'''
+        '''
+        import json
         with open('test_json.json', 'w') as f:
             json.dump(raw_data, f)
-        #'''
+        '''
 
         # 2. Парсим
 
@@ -212,9 +213,18 @@ def parser(subreddit, url_tail, depth, folder):
         # 3. Обходим все картинки
         for pic in pictures:
             log('---------------------------------------------------')
+                        
             file_counter += 1
             url = pic['url']
-            get_file(url, folder, file_counter)
+            title = pic['title']
+            author = pic['author']
+            permalink = pic['permalink']
+            # log("{file_counter}. POST: {permalink}", file_counter=file_counter, permalink=permalink)
+            log('{file_counter}. {title}', file_counter=file_counter, title=title)
+            log('AUTHOR: {author}', author=author)
+            log('URL: {url}', url=url)
+
+            get_file(url, folder)
             
         # Готовимся к следующему уровню погружения
         if url_tail.find("?") == -1:
