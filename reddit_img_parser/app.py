@@ -89,6 +89,104 @@ def download_by_direct_link(url, folder):
         print(f"Error while downloading {filename}: {e}")
 
 
+def get_file(url, folder, counter):
+    rg_id = ''
+    readed_data = ''
+    type = ''
+
+    filename = remove_query_string(os.path.basename(url))
+    filename_without_ex = os.path.splitext(filename)[0]
+    file_extension = os.path.splitext(filename)[1]
+    print('---------------------------------------------------')
+    print(f"{counter}. Trying to download file: {filename}")
+
+    common_extensions = ['.jpg', '.gif', '.jpeg', '.mp4', '.png']
+
+    # 3. Определяем тип файла
+    if file_extension in common_extensions:
+        type = 'common'
+    elif file_extension == '.gifv':
+        type = 'gifv'
+    else:
+        # это папка???
+        if url[-1] == '/':
+            print("It's a folder, passing")
+            return
+
+        # rg? imgur no ex?
+        # качаем
+        print('For this type of file we need to download additional info')
+        # print(f"URL is {url} ... folder is {folder}")
+        status = download_by_direct_link(url, folder)
+        if status != 200:
+            print(f"{filename} could not be downloaded. Response status code is {status}")
+            return
+        else:
+            # если скачали, то загружаем и парсим
+            filepath = os.path.join(folder, filename)
+            with open(filepath, 'r') as f:
+                readed_data = f.read()
+            os.remove(filepath)
+            if is_rg(readed_data):
+                type = 'rg'
+            elif is_imgur_no_ex(readed_data):
+                type = 'imgur_no_ex'
+            else:
+                type = 'other'
+    # print(f"TYPE IS {type}")
+    # 4. Если тип - 'other', то не скачиваем, переходим к след. файлу
+    if type == 'other':
+        print(f"{filename} doesn't supported, skipping")
+        return
+
+    # 5. Проверяем, есть ли данный файл в папке
+    if type == 'common':
+        filepath = os.path.join(folder, filename)
+
+    if type == 'gifv':
+        filename = f"{filename_without_ex}.mp4"
+        filepath = os.path.join(folder, filename)
+
+    if type == 'imgur_no_ex':
+        filename = f"{filename_without_ex}.jpeg"
+        filepath = os.path.join(folder, filename)
+
+    if type == 'rg':
+        # Получаем имя файла redgif
+        rg_id = get_rg_id(readed_data)
+        final_filename = f"{rg_id}.mp4"
+        filepath = os.path.join(folder, final_filename)
+        # print(filepath)
+        # print(os.path.isfile(filepath))
+
+    if os.path.isfile(filepath):
+        print(f"{filename} already in this folder, skipping")
+        return
+
+    # 6. Качаем
+
+    if type in ['common', 'gifv', 'imgur_no_ex']:
+        if type == "gifv":
+            filename = f"{filename_without_ex}.mp4"
+            url = f"https://i.imgur.com/{filename}"
+            print(f"GIFV file will be converted to {filename}")
+        if type == 'imgur_no_ex':
+            filename = f"{filename_without_ex}.jpeg"
+            url = f"https://i.imgur.com/{filename}"
+            print(f"File will be saved as {filename}")
+        status = download_by_direct_link(url, folder)
+        if status == 200:
+            print(f"{filename} saved")
+        else:
+            print(f"{filename} could not be downloaded. Response status code is {status}")
+
+    if type == 'rg':
+        print(f"{filename} will be downloaded with external module...")
+        print("Downloading |####### no progress bar ########|")
+        download_rg(rg_id, filepath)
+        print(f"{filename} saved")
+
+
 def parser(subreddit, url_tail, depth, folder):
     file_counter = 0
     suffix = ''
@@ -113,107 +211,9 @@ def parser(subreddit, url_tail, depth, folder):
         # 3. Обходим все картинки
         for pic in pictures:
             file_counter += 1
-
-            rg_id = ''
-            readed_data = ''
-            type = ''
-            # Взяли первую картинку. Извлекли из неё линк
             url = pic['url']
-
-            # Готовим данные для скачивания
-            # def download_by_direct_link(url, folder)
-
-            filename = remove_query_string(os.path.basename(url))
-            filename_without_ex = os.path.splitext(filename)[0]
-            file_extension = os.path.splitext(filename)[1]
-            print('---------------------------------------------------')
-            print(f"{file_counter}. Trying to download file: {filename}")
-
-            common_extensions = ['.jpg', '.gif', '.jpeg', '.mp4', '.png']
-
-            # 3. Определяем тип файла
-            if file_extension in common_extensions:
-                type = 'common'
-            elif file_extension == '.gifv':
-                type = 'gifv'
-            else:
-                # это папка???
-                if url[-1] == '/':
-                    print("It's a folder, passing")
-                    continue
-
-                # rg? imgur no ex?
-                # качаем
-                print('For this type of file we need to download additional info')
-                # print(f"URL is {url} ... folder is {folder}")
-                status = download_by_direct_link(url, folder)
-                if status != 200:
-                    print(f"{filename} could not be downloaded. Response status code is {status}")
-                    continue
-                else:
-                    # если скачали, то загружаем и парсим
-                    filepath = os.path.join(folder, filename)
-                    with open(filepath, 'r') as f:
-                        readed_data = f.read()
-                    os.remove(filepath)
-                    if is_rg(readed_data):
-                        type = 'rg'
-                    elif is_imgur_no_ex(readed_data):
-                        type = 'imgur_no_ex'
-                    else:
-                        type = 'other'
-            # print(f"TYPE IS {type}")
-            # 4. Если тип - 'other', то не скачиваем, переходим к след. файлу
-            if type == 'other':
-                continue
-
-            # 5. Проверяем, есть ли данный файл в папке
-            if type == 'common':
-                filepath = os.path.join(folder, filename)
-
-            if type == 'gifv':
-                filename = f"{filename_without_ex}.mp4"
-                filepath = os.path.join(folder, filename)
-
-            if type == 'imgur_no_ex':
-                filename = f"{filename_without_ex}.jpeg"
-                filepath = os.path.join(folder, filename)
-
-            if type == 'rg':
-                # Получаем имя файла redgif
-                rg_id = get_rg_id(readed_data)
-                final_filename = f"{rg_id}.mp4"
-                filepath = os.path.join(folder, final_filename)
-                # print(filepath)
-                # print(os.path.isfile(filepath))
-
-            if os.path.isfile(filepath):
-                print(f"{filename} already in this folder, skipping")
-                continue
-
-            # 6. Качаем
-
-            if type in ['common', 'gifv', 'imgur_no_ex']:
-                if type == "gifv":
-                    filename = f"{filename_without_ex}.mp4"
-                    url = f"https://i.imgur.com/{filename}"
-                    print(f"GIFV file will be converted to {filename}")
-                if type == 'imgur_no_ex':
-                    filename = f"{filename_without_ex}.jpeg"
-                    url = f"https://i.imgur.com/{filename}"
-                    print(f"File will be saved as {filename}")
-                status = download_by_direct_link(url, folder)
-                if status == 200:
-                    print(f"{filename} saved")
-                else:
-                    print(f"{filename} could not be downloaded. Response status code is {status}")
-
-            if type == 'rg':
-                print(f"{filename} will be downloaded with external module...")
-                print("Downloading |####### no progress bar ########|")
-                download_rg(rg_id, filepath)
-                print(f"{filename} saved")
-
+            get_file(url, folder, file_counter)
+            
         # Готовимся к следующему уровню погружения
         if url_tail.find("?") == -1:
             suffix = f"?after={last_entry_name}"
