@@ -1,4 +1,5 @@
 Console utility to parse images from Reddit
 
 TODO:
-- improve the function of loading a file from a depth specified by the user
+- user section: download all user pics from range
+- statistics output: to which subreddits the user sends images
