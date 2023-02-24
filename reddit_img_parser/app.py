@@ -44,7 +44,10 @@ def get_pictures(parsed_data):
             'permalink': data['permalink']
         })
 
-    last_entry_name = entries[-1]['data']['name']
+    if parsed_data['data']['after'] == None:
+        last_entry_name = ""
+    else:
+        last_entry_name = entries[-1]['data']['name']
 
     return pic_data, last_entry_name
 
@@ -180,7 +183,7 @@ def get_file(url, folder):
         log("{filename} saved", filename=filename)
 
 
-def parser(subreddit, url_tail, depth, folder):
+def parser(subreddit, url_tail, first_page, last_page, folder):
     file_counter = 0
     suffix = ''
     # if not os.path.exists(folder):
@@ -194,39 +197,43 @@ def parser(subreddit, url_tail, depth, folder):
     if not os.path.exists(folder):
         os.mkdir(folder)
 
-    for i in range(depth):
+    for i in range(last_page + 1):
         log('---------------------------------------------------')
         log("Trying to download pics json in range {i}", i=i)
         # 1. Загружаем json
         raw_data = download_json(subreddit, f"{url_tail}{suffix}")
         log('Success!')
-        '''
-        import json
-        with open('test_json.json', 'w') as f:
-            json.dump(raw_data, f)
-        '''
 
         # 2. Парсим
-
         pictures, last_entry_name = get_pictures(raw_data)
 
-        # 3. Обходим все картинки
-        for pic in pictures:
-            log('---------------------------------------------------')
+        if i >= first_page:
+            #'''
+            import json
+            with open(f"test_json_range_{i}.json", 'w') as f:
+                json.dump(raw_data, f)
+            #'''
 
-            file_counter += 1
-            url = pic['url']
-            title = pic['title']
-            author = pic['author']
+            # 3. Обходим все картинки
+            for pic in pictures:
+                log('---------------------------------------------------')
 
-            # log("{file_counter}. POST: {permalink}", file_counter=file_counter, permalink=permalink)
-            log('{file_counter}. {title}', file_counter=file_counter, title=title)
-            log('AUTHOR: {author}', author=author)
-            log('URL: {url}', url=url)
+                file_counter += 1
+                url = pic['url']
+                title = pic['title']
+                author = pic['author']
 
-            get_file(url, folder)
+                # log("{file_counter}. POST: {permalink}", file_counter=file_counter, permalink=permalink)
+                log('{file_counter}. {title}', file_counter=file_counter, title=title)
+                log('AUTHOR: {author}', author=author)
+                log('URL: {url}', url=url)
+
+                get_file(url, folder)
 
         # Готовимся к следующему уровню погружения
+        if last_entry_name == "":
+            return
+
         if url_tail.find("?") == -1:
             suffix = f"?after={last_entry_name}"
         else:
@@ -277,8 +284,10 @@ def ui():
         url_tail = 'top/.json?t=all'
         folder = subreddit + '_top_all'
 
-    depth = int(input("Select depth of subreddit (not more than 40): "))
+    print("One page contains 25 posts. We can parse 40 pages in range from 0 to 39")
+    first_page = int(input("Select starting page of subreddit (first page is 0): "))
+    last_page = int(input("Select last page of subreddit (not more than 39): "))
 
-    parser(subreddit, url_tail, depth, folder)
+    parser(subreddit, url_tail, first_page, last_page, folder)
 
     log('Parsing completed!')
