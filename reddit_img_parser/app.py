@@ -238,9 +238,9 @@ def parser(subreddit, url_tail, first_page, last_page, folder):
             suffix = f"&after={last_entry_name}"
 
 
-def ui():
+def ui(subreddit):
     print("Welcome to Reddit Pictures Parser!")
-    subreddit = input("Enter the name of the subreddit you want to scrape: ")
+    print(f"Preparing to parse: {subreddit}")
     print("What do you want to download? Enter a number")
 
     menu_items = [

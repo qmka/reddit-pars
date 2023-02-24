@@ -21,4 +21,4 @@ build: check
 .PHONY: install test lint selfcheck check build
 
 start:
-	poetry run reddit-img-parser
+	poetry run reddit-img-parser -s wallpapers
