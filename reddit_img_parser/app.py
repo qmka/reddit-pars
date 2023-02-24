@@ -4,9 +4,7 @@ from progress.bar import Bar
 from fake_useragent import UserAgent
 from reddit_img_parser.rg import is_rg, get_rg_id, download_rg
 from reddit_img_parser.utils import log, is_imgur_no_ex, remove_query_string
-
-
-ROOT_FOLDER = 'images'
+from reddit_img_parser.settings import ROOT_FOLDER
 
 
 def download_json(subreddit, tail):
@@ -208,11 +206,11 @@ def parser(subreddit, url_tail, first_page, last_page, folder):
         pictures, last_entry_name = get_pictures(raw_data)
 
         if i >= first_page:
-            #'''
+            '''
             import json
             with open(f"test_json_range_{i}.json", 'w') as f:
                 json.dump(raw_data, f)
-            #'''
+            '''
 
             # 3. Обходим все картинки
             for pic in pictures:
