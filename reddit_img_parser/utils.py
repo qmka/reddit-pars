@@ -1,5 +1,6 @@
 import os
 from datetime import datetime
+from reddit_img_parser.settings import ROOT_FOLDER
 
 
 def log(text, noprint=False, **kwargs):
@@ -27,3 +28,20 @@ def remove_query_string(filename):
     else:
         extension_without_query = ""
     return name + extension_without_query
+
+
+def make_folder(name, category, time_filter):
+    folder_template = f"{name}_{category}_{time_filter}"
+
+    if not os.path.exists(ROOT_FOLDER):
+        os.mkdir(ROOT_FOLDER)
+
+    path = os.path.join(ROOT_FOLDER, folder_template)
+    if not os.path.exists(path):
+        os.mkdir(path)
+    return path
+
+
+def convert_unix_time(unix_time):
+    timestamp = int(unix_time)
+    return datetime.utcfromtimestamp(timestamp).strftime('%Y-%m-%d %H:%M:%S')

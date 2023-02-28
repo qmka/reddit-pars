@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "reddit-img-parser"
-version = "0.6.0"
+version = "0.7.0"
 description = ""
 authors = ["skip"]
 
@@ -13,6 +13,8 @@ flake8 = "^6.0.0"
 redgifs = { git = "https://github.com/scrazzz/redgifs.git" }
 bs4 = "^0.0.1"
 argparse = "^1.4.0"
+praw = "^7.6.1"
+python-dotenv = "^1.0.0"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.1.3"
