@@ -17,7 +17,8 @@ options:
 ```
   -h, --help
   -a, --statistics - use this option if you want to get the list of redditors that posts to subreddit
-  -b, --batch  - download data from all redditors or subreddits that written in file 'batch.txt'
+  -b, --batch  - download data from all redditors or subreddits that written in file
+  (use filename for 'name' positional argument)
   -s, --subreddit - indicates to the program that you are working with a subreddit
   -u, --user - indicates to the program that you are working with a redditor
   -c {hot,new,rising,top}, --category {hot,new,rising,top} - set category of posts
