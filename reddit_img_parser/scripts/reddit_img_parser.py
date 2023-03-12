@@ -1,29 +1,42 @@
 # -*- coding:utf-8 -*-
 import argparse
-from reddit_img_parser.app import parse
+from reddit_img_parser.app import parse, batch_parse
+from reddit_img_parser.statistics import get_posters_list
 
 
 def main():
-    app_desc = "Parses Reddit's subreddits or users and extracts media"
+    app_desc = "Parses Reddit's subreddits or redditors and extracts media"
     categories = ['hot', 'new', 'rising', 'top']
     time_filters = ['hour', 'day', 'week', 'month', 'year', 'all']
 
     p = argparse.ArgumentParser(description=app_desc)
-    p.add_argument('-s', '--subreddit')
-    p.add_argument('-u', '--user')
+    p.add_argument('name')
+    p.add_argument('-a', '--statistics', action='store_true', required=False)
+    p.add_argument('-b', '--batch', action='store_true', required=False)
+    p.add_argument('-s', '--subreddit', action='store_true', required=False)
+    p.add_argument('-u', '--user', action='store_true', required=False)
     p.add_argument('-c', '--category', help='set category of posts',
-                   default='new', choices=categories)
+                   default='new', choices=categories, required=False)
     p.add_argument('-t', '--time', help='set time filter of posts',
-                   default='day', choices=time_filters)
-    p.add_argument('limit')
+                   default='day', choices=time_filters, required=False)
+    p.add_argument('-l', '--limit', default='10', required=False)
     args = p.parse_args()
-
-    if (not args.user and not args.subreddit) or (args.user and args.subreddit):
+    if args.batch:
+        if args.subreddit:
+            batch_parse('subreddit', args.name, args.category, args.time, int(args.limit))
+        elif args.user:
+            batch_parse('redditor', args.name, args.category, args.time, int(args.limit))
+    elif (not args.user and not args.subreddit) or (args.user and args.subreddit):
         print('use one of the flags: -u USERNAME or -s SUBREDDIT')
+    elif args.statistics:
+        if args.subreddit:
+            get_posters_list(args.name, args.category, args.time, int(args.limit))
+        else:
+            print('In development...')
     elif args.subreddit:
-        parse('subreddit', args.subreddit, args.category, args.time, int(args.limit))
+        parse('subreddit', args.name, args.category, args.time, int(args.limit))
     elif args.user:
-        parse('redditor', args.user, args.category, args.time, int(args.limit))
+        parse('redditor', args.name, args.category, args.time, int(args.limit))
 
 
 if __name__ == '__main__':

@@ -4,7 +4,7 @@ import requests
 from fake_useragent import UserAgent
 from progress.bar import Bar
 
-from reddit_img_parser.utils import log, remove_query_string, is_imgur_no_ex
+from reddit_img_parser.utils import log, remove_query_string, is_imgur_no_ex, is_reddit_gallery, extract_pic_links
 from reddit_img_parser.rg import is_rg, get_rg_id, download_rg
 
 
@@ -59,6 +59,8 @@ def get_file(url, folder):
         type = 'common'
     elif file_extension == '.gifv':
         type = 'gifv'
+    elif is_reddit_gallery(url):
+        type = "gallery"
     else:
         # это папка???
         if url[-1] == '/':
@@ -85,11 +87,30 @@ def get_file(url, folder):
                 type = 'imgur_no_ex'
             else:
                 type = 'other'
-    # print(f"TYPE IS {type}")
+    print(f"TYPE IS {type}")
     # 4. Если тип - 'other', то не скачиваем, переходим к след. файлу
     if type == 'other':
         log("{filename} doesn't supported, skipping", filename=filename)
         return
+
+    # 4.5 Если это галерея, то запускаем рекурсивный процесс
+
+    if type == 'gallery':
+        log('For the gallery we need to download its pictures')
+        gallery_status = download_by_direct_link(url, folder)
+        if gallery_status != 200:
+            log("{filename} could not be downloaded. Response status code is {gallery_status}", filename=filename, gallery_status=gallery_status)
+            return
+        else:
+            # если скачали, то загружаем и парсим
+            filepath = os.path.join(folder, filename)
+            with open(filepath, 'r') as f:
+                readed_data = f.read()
+            os.remove(filepath)
+            pic_links = extract_pic_links(readed_data)
+            for link in pic_links:
+                get_file(link, folder)
+            return
 
     # 5. Проверяем, есть ли данный файл в папке
     if type == 'common':

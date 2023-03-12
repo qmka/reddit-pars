@@ -11,6 +11,7 @@ def is_rg(file):
 def get_rg_id(file):
     soup = BeautifulSoup(file, 'html.parser')
     soup.prettify()
+
     link_with_id = soup.select("[rel='canonical']")[0]['href']
     id = link_with_id.split('/')[-1]
     return id
