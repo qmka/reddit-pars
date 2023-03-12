@@ -10,3 +10,5 @@ coverage.xml
 images/
 parser.log
 .env
+tmp
+batch.txt
