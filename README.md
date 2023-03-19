@@ -27,8 +27,3 @@ options:
 ```
 
 If you don't specify category, time filter and/or limit, then the download will be performed with default values similar to: -c new -t day -l 10
-
-
-TODO:
-- make statistics about to which subreddits the user sends media
-
