@@ -8,6 +8,7 @@ from reddit_img_parser.utils import log, make_folder, convert_unix_time
 from reddit_img_parser.download import get_file
 
 
+'''
 def is_valid_reddit_instance(instance, type):
     if type == 'subreddit':
         try:
@@ -27,6 +28,18 @@ def is_valid_reddit_instance(instance, type):
             return False
     else:
         raise ValueError("Invalid object type. Must be either 'redditor' or 'subreddit'.")
+'''
+def is_valid_reddit_instance(instance, obj_type):
+    try:
+        if obj_type == 'subreddit':
+            instance.id
+        elif obj_type == 'redditor':
+            instance.name
+        else:
+            raise ValueError("Invalid object type. Must be either 'redditor' or 'subreddit'.")
+        return True
+    except (prawcore.exceptions.Redirect, prawcore.exceptions.NotFound, prawcore.exceptions.Forbidden):
+        return False
 
 
 def make_reddit_instance():
@@ -48,7 +61,6 @@ def parse(type, name, category, time_filter, limit):
         entry = reddit.redditor(name)
     elif type == 'subreddit':
         entry = reddit.subreddit(name)
-
     if not is_valid_reddit_instance(entry, type):
         print(f"Invalid {type} name, try again!")
         return
@@ -60,7 +72,7 @@ def parse(type, name, category, time_filter, limit):
     try:
         created = convert_unix_time(entry.created_utc)
     except:
-        log("Redditor {name} doesn't exists now (suspended or something else). Passed!", name=name)
+        log("Incorrect Reddit entry {name} (doesn't exists, suspended or something else).", name=name)
         return
 
     # Make submissions list
