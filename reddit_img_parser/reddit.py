@@ -28,6 +28,8 @@ def is_valid_reddit_instance(instance, type):
     else:
         raise ValueError("Invalid object type. Must be either 'redditor' or 'subreddit'.")
 '''
+
+
 def is_valid_reddit_instance(instance, obj_type):
     try:
         if obj_type == 'subreddit':
@@ -64,7 +66,7 @@ def get_reddit_entry(type, name):
         return None
     else:
         return entry
-    
+
 
 def get_submissions(entry, type, category, limit, time_filter):
     if category == 'hot':

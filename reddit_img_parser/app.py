@@ -4,7 +4,7 @@ from reddit_img_parser.reddit import get_reddit_entry, get_submissions
 
 
 def parse(type, name, category, time_filter, limit):
-    
+
     entry = get_reddit_entry(type, name)
     if not entry:
         return
