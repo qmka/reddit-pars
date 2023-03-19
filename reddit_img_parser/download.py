@@ -100,7 +100,6 @@ def get_file(url, folder):
         gallery_status = download_by_direct_link(url, folder)
         if gallery_status != 200:
             log("{filename} could not be downloaded. Response status code is {gallery_status}", filename=filename, gallery_status=gallery_status)
-            return
         else:
             # если скачали, то загружаем и парсим
             filepath = os.path.join(folder, filename)
@@ -110,7 +109,7 @@ def get_file(url, folder):
             pic_links = extract_pic_links(readed_data)
             for link in pic_links:
                 get_file(link, folder)
-            return
+        return
 
     # 5. Проверяем, есть ли данный файл в папке
     if type == 'common':

@@ -70,14 +70,15 @@ def get_reddit_entry(type, name):
 
 def get_submissions(entry, type, category, limit, time_filter):
     if category == 'hot':
-        return entry.hot(limit=limit)
+        submissions = entry.hot(limit=limit)
     elif category == 'new':
-        return entry.new(limit=limit)
+        submissions = entry.new(limit=limit)
     elif category == 'rising':
         if type == 'redditor':
             log("'Rising' category doesn't exists for redditors, try different!")
-            return None
+            submissions = None
         else:
-            return entry.rising(limit=limit)
+            submissions = entry.rising(limit=limit)
     else:
-        return entry.top(limit=limit, time_filter=time_filter)
+        submissions = entry.top(limit=limit, time_filter=time_filter)
+    return submissions

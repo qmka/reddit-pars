@@ -31,15 +31,15 @@ def main():
         print('use one of the flags: -u USERNAME or -s SUBREDDIT')
         return
 
+    parse_type = 'subreddit' if args.subreddit else 'redditor'
+    limit = int(args.limit)
+
     if args.batch:
-        parse_type = 'subreddit' if args.subreddit else 'redditor'
-        batch_parse(parse_type, args.name, args.category, args.time, int(args.limit))
+        batch_parse(parse_type, args.name, args.category, args.time, limit)
     elif args.statistics:
-        parse_type = 'subreddit' if args.subreddit else 'redditor'
-        get_statistics(parse_type, args.name, args.category, args.time, int(args.limit))
+        get_statistics(parse_type, args.name, args.category, args.time, limit)
     else:
-        parse_type = 'subreddit' if args.subreddit else 'redditor'
-        parse(parse_type, args.name, args.category, args.time, int(args.limit))
+        parse(parse_type, args.name, args.category, args.time, limit)
 
 
 if __name__ == '__main__':
