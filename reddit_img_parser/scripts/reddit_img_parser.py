@@ -1,7 +1,7 @@
 # -*- coding:utf-8 -*-
 import argparse
 from reddit_img_parser.app import parse, batch_parse
-from reddit_img_parser.statistics import get_posters_list
+from reddit_img_parser.statistics import get_statistics
 
 
 def main():
@@ -30,9 +30,9 @@ def main():
         print('use one of the flags: -u USERNAME or -s SUBREDDIT')
     elif args.statistics:
         if args.subreddit:
-            get_posters_list(args.name, args.category, args.time, int(args.limit))
+            get_statistics('subreddit', args.name, args.category, args.time, int(args.limit))
         else:
-            print('In development...')
+            get_statistics('redditor', args.name, args.category, args.time, int(args.limit))
     elif args.subreddit:
         parse('subreddit', args.name, args.category, args.time, int(args.limit))
     elif args.user:
