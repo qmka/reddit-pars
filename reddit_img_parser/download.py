@@ -87,7 +87,7 @@ def get_file(url, folder):
                 type = 'imgur_no_ex'
             else:
                 type = 'other'
-    print(f"TYPE IS {type}")
+
     # 4. Если тип - 'other', то не скачиваем, переходим к след. файлу
     if type == 'other':
         log("{filename} doesn't supported, skipping", filename=filename)
