@@ -1,3 +1,5 @@
+[![Maintainability](https://api.codeclimate.com/v1/badges/92d18413fdc52546576d/maintainability)](https://codeclimate.com/github/qmka/reddit-pars/maintainability)
+
 Console utility to parse images from Reddit
 
 Usage:
