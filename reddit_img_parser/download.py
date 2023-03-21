@@ -8,38 +8,41 @@ from reddit_img_parser.utils import log, remove_query_string, is_imgur_no_ex, is
 from reddit_img_parser.rg import is_rg, get_rg_id, download_rg
 
 
-def download_by_direct_link(url, folder):
-    # возвращает статус скачивания
-    user_agent = UserAgent()
-    filename = os.path.basename(url)
-    filepath = os.path.join(folder, filename)
-
+def download_file(url, filepath, filename):
     try:
-        headers = {'User-Agent': user_agent.chrome}
+        headers = {'User-Agent': UserAgent().chrome}
         timeout = 5
         response = requests.get(
             url,
             headers=headers,
             timeout=timeout,
             stream=True)
+        response.raise_for_status()
 
-        if response.status_code == 200:
-            total_length = int(response.headers.get("Content-Length", 0))
-            block_size = 1024
-            written = 0
-            bar = Bar('Downloading', max=None, suffix='%(percent)d%%')
-            with open(filepath, "wb") as f:
-                for data in response.iter_content(block_size):
-                    written = written + len(data)
-                    f.write(data)
-                    if bar.max is None:
-                        bar.max = max(written, total_length)
-                    bar.next(len(data))
-            bar.finish()
+        total_length = int(response.headers.get("Content-Length", 0))
+        block_size = 1024
+        written = 0
+        bar = Bar('Downloading', max=None, suffix='%(percent)d%%')
+        with open(filepath, "wb") as f:
+            for data in response.iter_content(block_size):
+                written += len(data)
+                f.write(data)
+                if bar.max is None:
+                    bar.max = max(written, total_length)
+                bar.next(len(data))
+        bar.finish()
         return response.status_code
+        
     except requests.exceptions.RequestException as e:
         log("Error while downloading {filename}: {e}", filename=filename, e=e)
+        return getattr(e.response, "status_code", 400)
 
+
+def download_by_direct_link(url, folder):
+    filename = os.path.basename(url)
+    filepath = os.path.join(folder, filename)
+    status_code = download_file(url, filepath, filename)
+    return status_code
 
 def get_file(url, folder):
     rg_id = ''
