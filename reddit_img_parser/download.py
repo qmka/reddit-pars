@@ -44,89 +44,67 @@ def download_by_direct_link(url, folder):
     status_code = download_file(url, filepath, filename)
     return status_code
 
-def get_file(url, folder):
-    rg_id = ''
-    readed_data = ''
-    type = ''
 
-    filename = remove_query_string(os.path.basename(url))
-    filename_without_ex = os.path.splitext(filename)[0]
-    file_extension = os.path.splitext(filename)[1]
+def get_filename_without_ex(filename):
+    return os.path.splitext(filename)[0]
 
-    log("Trying to download file: {filename}", filename=filename)
+def get_filename(url):
+    return remove_query_string(os.path.basename(url))
 
+
+def get_file_media_type(filename, url, folder):
     common_extensions = ['.jpg', '.gif', '.jpeg', '.mp4', '.png']
+    readed_data = ''
+    file_extension = os.path.splitext(filename)[1]
 
     # 3. Определяем тип файла
     if file_extension in common_extensions:
-        type = 'common'
+        media_type = 'common'
     elif file_extension == '.gifv':
-        type = 'gifv'
+        media_type = 'gifv'
     elif is_reddit_gallery(url):
-        type = "gallery"
+        media_type = "gallery"
     else:
         # это папка???
         if url[-1] == '/':
-            log("It's a folder, passing")
-            return
+            media_type = "folder"
+            return (media_type, readed_data)
 
         # rg? imgur no ex?
         # качаем
-        log('For this type of file we need to download additional info')
+        log('For this media_type of file we need to download additional info')
         # print(f"URL is {url} ... folder is {folder}")
         status = download_by_direct_link(url, folder)
         if status != 200:
-            log("{filename} could not be downloaded. Response status code is {status}", filename=filename, status=status)
-            return
-        else:
+            media_type = "broken"
+            return (media_type, readed_data)
             # если скачали, то загружаем и парсим
-            filepath = os.path.join(folder, filename)
-            with open(filepath, 'r') as f:
-                readed_data = f.read()
-            os.remove(filepath)
-            if is_rg(readed_data):
-                type = 'rg'
-            elif is_imgur_no_ex(readed_data):
-                type = 'imgur_no_ex'
-            else:
-                type = 'other'
-
-    # 4. Если тип - 'other', то не скачиваем, переходим к след. файлу
-    if type == 'other':
-        log("{filename} doesn't supported, skipping", filename=filename)
-        return
-
-    # 4.5 Если это галерея, то запускаем рекурсивный процесс
-
-    if type == 'gallery':
-        log('For the gallery we need to download its pictures')
-        gallery_status = download_by_direct_link(url, folder)
-        if gallery_status != 200:
-            log("{filename} could not be downloaded. Response status code is {gallery_status}", filename=filename, gallery_status=gallery_status)
+        filepath = os.path.join(folder, filename)
+        with open(filepath, 'r') as f:
+            readed_data = f.read()
+        os.remove(filepath)
+        if is_rg(readed_data):
+            media_type = 'rg'
+        elif is_imgur_no_ex(readed_data):
+            media_type = 'imgur_no_ex'
         else:
-            # если скачали, то загружаем и парсим
-            filepath = os.path.join(folder, filename)
-            with open(filepath, 'r') as f:
-                readed_data = f.read()
-            os.remove(filepath)
-            pic_links = extract_pic_links(readed_data)
-            for link in pic_links:
-                get_file(link, folder)
-        return
+            media_type = 'other'
+    return (media_type, readed_data)
 
-    # 5. Проверяем, есть ли данный файл в папке
-    if type == 'common':
+
+def is_file_exists(media_type, folder, filename, readed_data):
+    if media_type == 'common':
         filepath = os.path.join(folder, filename)
 
-    if type == 'gifv':
-        filename = f"{filename_without_ex}.mp4"
+    if media_type == 'gifv':
+        filename = f"{get_filename_without_ex(filename)}.mp4"
         filepath = os.path.join(folder, filename)
 
-    if type == 'imgur_no_ex':
-        filename = f"{filename_without_ex}.jpeg"
+    if media_type == 'imgur_no_ex':
+        filename = f"{get_filename_without_ex(filename)}.jpeg"
         filepath = os.path.join(folder, filename)
 
-    if type == 'rg':
+    if media_type == 'rg':
         # Получаем имя файла redgif
         rg_id = get_rg_id(readed_data)
         final_filename = f"{rg_id}.mp4"
@@ -136,17 +114,69 @@ def get_file(url, folder):
 
     if os.path.isfile(filepath):
         log("{filename} already in this folder, skipping", filename=filename)
+        return True
+    return False
+
+
+def folder_type_handler():
+    log("It's a folder, passing")
+
+
+def other_type_handler(filename):
+    log("{filename} doesn't supported, skipping", filename=filename)
+
+
+def broken_type_handler(filename):
+    log("{filename} could not be downloaded", filename=filename)
+
+
+def gallery_type_handler(url, folder, filename):
+    print(url, folder, filename)
+    log('For the gallery we need to download its pictures')
+    gallery_status = download_by_direct_link(url, folder)
+    if gallery_status != 200:
+        log("{filename} could not be downloaded. Response status code is {gallery_status}", filename=filename, gallery_status=gallery_status)
+    else:
+        # если скачали, то загружаем и парсим
+        filepath = os.path.join(folder, filename)
+        with open(filepath, 'r') as f:
+            readed_data = f.read()
+        os.remove(filepath)
+        pic_links = extract_pic_links(readed_data)
+        for link in pic_links:
+            get_file(link, folder)
+    return
+
+
+def get_file(url, folder):
+    filename = get_filename(url)
+    log("Trying to download file: {filename}", filename=filename)
+    (media_type, readed_data) = get_file_media_type(filename, url, folder)
+
+    type_functions = {
+        'folder': folder_type_handler,
+        'other': lambda: other_type_handler(filename),
+        'broken': lambda: broken_type_handler(filename),
+        'gallery': lambda: gallery_type_handler(url, folder, filename)
+    }
+
+    if media_type in type_functions:
+        type_functions[media_type]()
+        return
+
+    # 5. Проверяем, есть ли данный файл в папке
+    if is_file_exists(media_type, folder, filename, readed_data):
         return
 
     # 6. Качаем
 
-    if type in ['common', 'gifv', 'imgur_no_ex']:
-        if type == "gifv":
-            filename = f"{filename_without_ex}.mp4"
+    if media_type in ['common', 'gifv', 'imgur_no_ex']:
+        if media_type == "gifv":
+            filename = f"{get_filename_without_ex(filename)}.mp4"
             url = f"https://i.imgur.com/{filename}"
             log("GIFV file will be converted to {filename}", filename=filename)
-        if type == 'imgur_no_ex':
-            filename = f"{filename_without_ex}.jpeg"
+        if media_type == 'imgur_no_ex':
+            filename = f"{get_filename_without_ex(filename)}.jpeg"
             url = f"https://i.imgur.com/{filename}"
             log("File will be saved as {filename}", filename=filename)
         status = download_by_direct_link(url, folder)
@@ -155,8 +185,11 @@ def get_file(url, folder):
         else:
             log("{filename} could not be downloaded. Response status code is {status}", filename=filename, status=status)
 
-    if type == 'rg':
+    if media_type == 'rg':
         log("{filename} will be downloaded with external module...", filename=filename)
         print("Downloading |####### no progress bar ########|")
+        rg_id = get_rg_id(readed_data)
+        final_filename = f"{rg_id}.mp4"
+        filepath = os.path.join(folder, final_filename)
         download_rg(rg_id, filepath)
         log("{filename} saved", filename=filename)
