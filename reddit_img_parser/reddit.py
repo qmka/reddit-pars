@@ -67,7 +67,7 @@ def get_reddit_entry(type, name):
     else:
         return entry
 
-
+'''
 def get_submissions(entry, type, category, limit, time_filter):
     if category == 'hot':
         submissions = entry.hot(limit=limit)
@@ -81,4 +81,34 @@ def get_submissions(entry, type, category, limit, time_filter):
             submissions = entry.rising(limit=limit)
     else:
         submissions = entry.top(limit=limit, time_filter=time_filter)
+    return submissions
+
+def get_submissions_old(entry, type, category, limit, time_filter):
+    if category == 'rising' and type == 'redditor':
+        log("'Rising' category doesn't exists for redditors, try different!")
+        return None
+    elif category == 'rising':
+        submissions = entry.rising(limit=limit)
+    elif category == 'hot':
+        submissions = entry.hot(limit=limit)
+    elif category == 'new':
+        submissions = entry.new(limit=limit)
+    else:
+        submissions = entry.top(limit=limit, time_filter=time_filter)
+    return submissions
+'''
+def get_submissions(entry, type, category, limit, time_filter):
+    match category:
+        case 'rising':
+            if type == 'redditor':
+                log("'Rising' category doesn't exists for redditors, try different!")
+                return None
+            else:
+                submissions = entry.rising(limit=limit)
+        case 'hot':
+            submissions = entry.hot(limit=limit)
+        case 'new':
+            submissions = entry.new(limit=limit)
+        case 'top':
+            submissions = entry.top(limit=limit, time_filter=time_filter)
     return submissions
