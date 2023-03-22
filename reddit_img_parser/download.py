@@ -148,48 +148,68 @@ def gallery_type_handler(url, folder, filename):
     return
 
 
+def rg_type_handler(media_type, folder, filename, readed_data):
+    if is_file_exists(media_type, folder, filename, readed_data):
+        return
+    log("{filename} will be downloaded with external module...", filename=filename)
+    print("Downloading |####### no progress bar ########|")
+    rg_id = get_rg_id(readed_data)
+    final_filename = f"{rg_id}.mp4"
+    filepath = os.path.join(folder, final_filename)
+    download_rg(rg_id, filepath)
+    log("{filename} saved", filename=filename)
+
+
+def gifv_type_handler(media_type, folder, filename, readed_data):
+    if is_file_exists(media_type, folder, filename, readed_data):
+        return
+    filename = f"{get_filename_without_ex(filename)}.mp4"
+    url = f"https://i.imgur.com/{filename}"
+    log("GIFV file will be converted to {filename}", filename=filename)
+    status = download_by_direct_link(url, folder)
+    print_downloading_status(filename, status)
+
+
+def imgur_type_handler(media_type, folder, filename, readed_data):
+    if is_file_exists(media_type, folder, filename, readed_data):
+        return
+    filename = f"{get_filename_without_ex(filename)}.jpeg"
+    url = f"https://i.imgur.com/{filename}"
+    log("File will be saved as {filename}", filename=filename)
+    status = download_by_direct_link(url, folder)
+    print_downloading_status(filename, status)
+
+
+def common_type_handler(media_type, folder, url, readed_data):
+    filename = get_filename(url)
+    if is_file_exists(media_type, folder, filename, readed_data):
+        return
+    status = download_by_direct_link(url, folder)
+    print_downloading_status(filename, status)
+
+
 def get_file(url, folder):
     filename = get_filename(url)
     log("Trying to download file: {filename}", filename=filename)
-    (media_type, readed_data) = get_file_media_type(filename, url, folder)
+    media_type, readed_data = get_file_media_type(filename, url, folder)
 
     type_functions = {
         'folder': folder_type_handler,
         'other': lambda: other_type_handler(filename),
         'broken': lambda: broken_type_handler(filename),
-        'gallery': lambda: gallery_type_handler(url, folder, filename)
+        'gallery': lambda: gallery_type_handler(url, folder, filename),
+        'rg': lambda: rg_type_handler(media_type, folder, filename, readed_data),
+        'gifv': lambda: gifv_type_handler(media_type, folder, filename, readed_data),
+        'imgur_no_ex': lambda: imgur_type_handler(media_type, folder, filename, readed_data),
+        'common': lambda: common_type_handler(media_type, folder, url, readed_data)
     }
 
-    if media_type in type_functions:
-        type_functions[media_type]()
-        return
+    type_functions[media_type]()
+    return
 
-    # 5. Проверяем, есть ли данный файл в папке
-    if is_file_exists(media_type, folder, filename, readed_data):
-        return
 
-    # 6. Качаем
-
-    if media_type in ['common', 'gifv', 'imgur_no_ex']:
-        if media_type == "gifv":
-            filename = f"{get_filename_without_ex(filename)}.mp4"
-            url = f"https://i.imgur.com/{filename}"
-            log("GIFV file will be converted to {filename}", filename=filename)
-        if media_type == 'imgur_no_ex':
-            filename = f"{get_filename_without_ex(filename)}.jpeg"
-            url = f"https://i.imgur.com/{filename}"
-            log("File will be saved as {filename}", filename=filename)
-        status = download_by_direct_link(url, folder)
-        if status == 200:
-            log("{filename} saved", filename=filename)
-        else:
-            log("{filename} could not be downloaded. Response status code is {status}", filename=filename, status=status)
-
-    if media_type == 'rg':
-        log("{filename} will be downloaded with external module...", filename=filename)
-        print("Downloading |####### no progress bar ########|")
-        rg_id = get_rg_id(readed_data)
-        final_filename = f"{rg_id}.mp4"
-        filepath = os.path.join(folder, final_filename)
-        download_rg(rg_id, filepath)
+def print_downloading_status(filename, status):
+    if status == 200:
         log("{filename} saved", filename=filename)
+    else:
+        log("{filename} could not be downloaded. Response status code is {status}", filename=filename, status=status)
