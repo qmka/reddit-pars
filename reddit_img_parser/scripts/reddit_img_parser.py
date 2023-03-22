@@ -36,10 +36,11 @@ def main():
 
     if args.batch:
         batch_parse(parse_type, args.name, args.category, args.time, limit)
-    elif args.statistics:
+        return
+    if args.statistics:
         get_statistics(parse_type, args.name, args.category, args.time, limit)
-    else:
-        parse(parse_type, args.name, args.category, args.time, limit)
+        return
+    parse(parse_type, args.name, args.category, args.time, limit)
 
 
 if __name__ == '__main__':
