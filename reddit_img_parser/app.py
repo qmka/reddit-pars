@@ -23,8 +23,16 @@ def parse(**params):
     except:
         log("Incorrect Reddit entry {name} (doesn't exists, suspended or something else).", name=name)
         return
+    
+    submissions_params = {
+        'entry': entry,
+        'parse_type': type,
+        'category': category,
+        'limit': limit,
+        'time_filter': time_filter
+    }
 
-    submissions = get_submissions(entry, type, category, limit, time_filter)
+    submissions = get_submissions(**submissions_params)
     if not submissions:
         return
 

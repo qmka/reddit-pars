@@ -97,10 +97,17 @@ def get_submissions_old(entry, type, category, limit, time_filter):
         submissions = entry.top(limit=limit, time_filter=time_filter)
     return submissions
 '''
-def get_submissions(entry, type, category, limit, time_filter):
+def get_submissions(**submission_params):
+    # entry, type, category, limit, time_filter
+    parse_type = submission_params.get('parse_type', None)
+    entry = submission_params.get('entry', None)
+    category = submission_params.get('category', None)
+    time_filter = submission_params.get('time_filter', None)
+    limit = submission_params.get('limit', None)
+    
     match category:
         case 'rising':
-            if type == 'redditor':
+            if parse_type == 'redditor':
                 log("'Rising' category doesn't exists for redditors, try different!")
                 return None
             else:
