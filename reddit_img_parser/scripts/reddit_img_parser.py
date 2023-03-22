@@ -34,13 +34,21 @@ def main():
     parse_type = 'subreddit' if args.subreddit else 'redditor'
     limit = int(args.limit)
 
+    params = {
+        'name': args.name,
+        'parse_type': parse_type,
+        'category': args.category,
+        'limit': limit,
+        'time_filter': args.time
+    }
+
     if args.batch:
-        batch_parse(parse_type, args.name, args.category, args.time, limit)
+        batch_parse(**params)
         return
     if args.statistics:
-        get_statistics(parse_type, args.name, args.category, args.time, limit)
+        get_statistics(**params)
         return
-    parse(parse_type, args.name, args.category, args.time, limit)
+    parse(**params)
 
 
 if __name__ == '__main__':

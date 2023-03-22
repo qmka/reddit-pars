@@ -1,7 +1,12 @@
 from reddit_img_parser.reddit import get_reddit_entry, get_submissions
 
 
-def get_statistics(type, name, category, time_filter, limit):
+def get_statistics(**params):
+    type = params.get('parse_type', None)
+    name = params.get('name', None)
+    category = params.get('category', None)
+    time_filter = params.get('time_filter', None)
+    limit = params.get('limit', None)
 
     entry = get_reddit_entry(type, name)
     if not entry:

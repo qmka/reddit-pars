@@ -3,7 +3,12 @@ from reddit_img_parser.download import get_file
 from reddit_img_parser.reddit import get_reddit_entry, get_submissions
 
 
-def parse(type, name, category, time_filter, limit):
+def parse(**params):
+    type = params.get('parse_type', None)
+    name = params.get('name', None)
+    category = params.get('category', None)
+    time_filter = params.get('time_filter', None)
+    limit = params.get('limit', None)
 
     entry = get_reddit_entry(type, name)
     if not entry:
@@ -73,7 +78,13 @@ def parse(type, name, category, time_filter, limit):
     log('Parsing completed!')
 
 
-def batch_parse(type, filename, category, time_filter, limit):
+def batch_parse(**params):
+    type = params.get('parse_type', None)
+    filename = params.get('name', None)
+    category = params.get('category', None)
+    time_filter = params.get('time_filter', None)
+    limit = params.get('limit', None)
+
     print('Preparing to batch parse...')
     # 1. Читаем из файла в список
     # 2. Для каждого из списка вызываем parse
@@ -86,8 +97,15 @@ def batch_parse(type, filename, category, time_filter, limit):
 
     # Print the list of usernames
     for entry_name in entries:
+        entry_params = {
+            'name': entry_name,
+            'parse_type': type,
+            'category': category,
+            'limit': limit,
+            'time_filter': time_filter
+        }
 
-        parse(type, entry_name, category, time_filter, limit)
+        parse(**entry_params)
         print('------------------------------------')
         print('------------------------------------')
 
