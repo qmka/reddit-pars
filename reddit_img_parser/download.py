@@ -87,23 +87,19 @@ def get_file_media_type(filename, url, folder):
 '''
 
 def get_uncommon_media_type(filename, url, folder):
-    readed_data = ''
     log('For this media_type of file we need to download additional info')
     status = download_by_direct_link(url, folder)
     if status != 200:
-        media_type = "broken"
-    else:
-        filepath = os.path.join(folder, filename)
-        with open(filepath, 'r') as f:
-            readed_data = f.read()
-        os.remove(filepath)
-        if is_rg(readed_data):
-            media_type = 'rg'
-        elif is_imgur_no_ex(readed_data):
-            media_type = 'imgur_no_ex'
-        else:
-            media_type = 'other'
-    return (media_type, readed_data)
+        return ("broken", "")
+    filepath = os.path.join(folder, filename)
+    with open(filepath, 'r') as f:
+        readed_data = f.read()
+    os.remove(filepath)
+    if is_rg(readed_data):
+        return ('rg', readed_data)
+    if is_imgur_no_ex(readed_data):
+        return ('imgur_no_ex', readed_data)
+    return ('other', readed_data)
 
 def get_file_media_type(filename, url, folder):
     common_extensions = ['.jpg', '.gif', '.jpeg', '.mp4', '.png']
