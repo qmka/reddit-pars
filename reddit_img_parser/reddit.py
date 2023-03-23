@@ -7,29 +7,6 @@ from dotenv import load_dotenv
 from reddit_img_parser.utils import log
 
 
-'''
-def is_valid_reddit_instance(instance, type):
-    if type == 'subreddit':
-        try:
-            instance.id
-            return True
-        except prawcore.exceptions.Redirect:
-            return False
-        except prawcore.exceptions.NotFound:
-            return False
-    elif type == 'redditor':
-        try:
-            instance.name
-            return True
-        except prawcore.exceptions.NotFound:
-            return False
-        except prawcore.exceptions.Forbidden:
-            return False
-    else:
-        raise ValueError("Invalid object type. Must be either 'redditor' or 'subreddit'.")
-'''
-
-
 def is_valid_reddit_instance(instance, obj_type):
     try:
         if obj_type == 'subreddit':
@@ -37,9 +14,12 @@ def is_valid_reddit_instance(instance, obj_type):
         elif obj_type == 'redditor':
             instance.name
         else:
-            raise ValueError("Invalid object type. Must be either 'redditor' or 'subreddit'.")
+            raise ValueError("Invalid object type. "
+                             "Must be either 'redditor' or 'subreddit'.")
         return True
-    except (prawcore.exceptions.Redirect, prawcore.exceptions.NotFound, prawcore.exceptions.Forbidden):
+    except (prawcore.exceptions.Redirect,
+            prawcore.exceptions.NotFound,
+            prawcore.exceptions.Forbidden):
         return False
 
 
@@ -67,36 +47,7 @@ def get_reddit_entry(type, name):
     else:
         return entry
 
-'''
-def get_submissions(entry, type, category, limit, time_filter):
-    if category == 'hot':
-        submissions = entry.hot(limit=limit)
-    elif category == 'new':
-        submissions = entry.new(limit=limit)
-    elif category == 'rising':
-        if type == 'redditor':
-            log("'Rising' category doesn't exists for redditors, try different!")
-            submissions = None
-        else:
-            submissions = entry.rising(limit=limit)
-    else:
-        submissions = entry.top(limit=limit, time_filter=time_filter)
-    return submissions
 
-def get_submissions_old(entry, type, category, limit, time_filter):
-    if category == 'rising' and type == 'redditor':
-        log("'Rising' category doesn't exists for redditors, try different!")
-        return None
-    elif category == 'rising':
-        submissions = entry.rising(limit=limit)
-    elif category == 'hot':
-        submissions = entry.hot(limit=limit)
-    elif category == 'new':
-        submissions = entry.new(limit=limit)
-    else:
-        submissions = entry.top(limit=limit, time_filter=time_filter)
-    return submissions
-'''
 def get_submissions(**submission_params):
     # entry, type, category, limit, time_filter
     parse_type = submission_params.get('parse_type', None)
@@ -104,11 +55,12 @@ def get_submissions(**submission_params):
     category = submission_params.get('category', None)
     time_filter = submission_params.get('time_filter', None)
     limit = submission_params.get('limit', None)
-    
+
     match category:
         case 'rising':
             if parse_type == 'redditor':
-                log("'Rising' category doesn't exists for redditors, try different!")
+                log("'Rising' category doesn't exists "
+                    "for redditors, try different!")
                 return None
             else:
                 submissions = entry.rising(limit=limit)

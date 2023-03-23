@@ -35,7 +35,9 @@ def extract_pic_links(gallery):
     for link in soup.find_all('a', href=True):
         href = link['href']
         if href.find("https://preview.redd.it") >= 0:
-            image_direct_link = f"https://i.redd.it/{href.split('/')[3].split('?')[0]}"
+            image_direct_link = (
+                f"https://i.redd.it/"
+                f"{href.split('/')[3].split('?')[0]}")
             links.append(image_direct_link)
     return links
 

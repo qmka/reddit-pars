@@ -31,7 +31,7 @@ def parse_submissions(submissions, type, path):
         sub_created = convert_unix_time(sub.created)
 
         print('------------------------------------')
-        log('#{counter}', counter=i+1)
+        log('#{counter}', counter=i + 1)
         log('TITLE: {title}', title=title)
         log('CREATED AT: {sub_created}', sub_created=sub_created)
         log('URL: {url}', url=url)
@@ -59,10 +59,13 @@ def parse(**params):
 
     try:
         created = convert_unix_time(entry.created_utc)
-    except:
-        log("Incorrect Reddit entry {name} (doesn't exists, suspended or something else).", name=name)
+    except Exception as e:
+        log("Incorrect Reddit entry {name} "
+            "(doesn't exists, suspended or something else).",
+            name=name)
+        log("{e}", e=e)
         return
-    
+
     submissions_params = {
         'entry': entry,
         'parse_type': type,
@@ -77,7 +80,7 @@ def parse(**params):
 
     log("Name of {type}: {name}", type=type, name=name)
     log("Account created: {created}", created=created)
-    log("Processing..." )
+    log("Processing...")
 
     parse_submissions(submissions, type, path)
     log('Parsing completed!')
@@ -95,8 +98,9 @@ def batch_parse(**params):
     try:
         with open(filename, "r") as f:
             entries = f.read().splitlines()
-    except:
-        print("Batch file doesn't exists!")
+    except Exception as e:
+        print(e)
+        print("Can't read the batch file!")
         return
 
     for entry_name in entries:

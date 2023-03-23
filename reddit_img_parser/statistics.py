@@ -1,6 +1,7 @@
 from functools import reduce
 from reddit_img_parser.reddit import get_reddit_entry, get_submissions
 
+
 def get_key_entry(sub, type):
     return sub.subreddit if type == 'redditor' else sub.author
 
@@ -30,11 +31,15 @@ def get_statistics(**params):
     if not submissions:
         return
     print('Processing... ')
-    statistics_data = reduce(lambda sd, sub: add_to_statistics_data(sd, sub, type), submissions, {})
-    
+    stat_data = reduce(
+        lambda sd, sub: add_to_statistics_data(sd, sub, type),
+        submissions,
+        {}
+    )
+
     print(f"Statistics to: {name}")
     print((21 + len(name)) * '-')
-    sorted_data = dict(sorted(statistics_data.items(), key=lambda item: -item[1]))
+    sorted_data = dict(sorted(stat_data.items(), key=lambda item: -item[1]))
     list(map(lambda el: print(f"{el}: {sorted_data[el]}"), sorted_data))
 
 
