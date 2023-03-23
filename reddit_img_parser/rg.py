@@ -18,11 +18,15 @@ def get_rg_id(file):
 
 
 def download_rg(id, filepath):
-
-    api = API()
-    api.login()
-
-    gif = api.get_gif(id)
-
-    api.download(gif.urls.hd, f"{filepath}")
-    api.close()
+    try:
+        api = API()
+        api.login()
+        gif = api.get_gif(id)
+        api.download(gif.urls.hd, f"{filepath}")
+        success = True
+    except Exception as e:
+        print(f"An error occurred downloading RedGif file: {e}")
+        success = False
+    finally:
+        api.close()
+    return success

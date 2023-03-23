@@ -183,8 +183,11 @@ def rg_type_handler(media_type, folder, filename, readed_data):
     rg_id = get_rg_id(readed_data)
     final_filename = f"{rg_id}.mp4"
     filepath = os.path.join(folder, final_filename)
-    download_rg(rg_id, filepath)
-    log("{filename} saved", filename=filename)
+    status = download_rg(rg_id, filepath)
+    if status is True:
+        log("{filename} saved", filename=filename)
+    else:
+        log("{filename} didn't saved")
 
 
 def gifv_type_handler(media_type, folder, filename, readed_data):
