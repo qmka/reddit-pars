@@ -16,8 +16,6 @@ def parse(**params):
 
     path = make_folder(name, category, time_filter)
 
-    counter = 0
-
     try:
         created = convert_unix_time(entry.created_utc)
     except:
@@ -39,38 +37,22 @@ def parse(**params):
     # Show info
     log("Name of {type}: {name}", type=type, name=name)
     log("Account created: {created}", created=created)
+    log("Processing..." )
 
     # Parse each submission
-    for sub in submissions:
+    for i, sub in enumerate(submissions):
 
         if type == 'subreddit':
-            title = sub.title
-            author = sub.author
-            url = sub.url
+            title, author, url = sub.title, sub.author, sub.url
         elif type == 'redditor':
-            submission_attrs = (vars(sub))
+            sub_attrs = vars(sub)
             posted_to = sub.subreddit
+            title = sub_attrs.get('link_title') or sub_attrs.get('title')
+            url = sub_attrs.get('link_url') or sub_attrs.get('url')
 
-            '''
-            # Print out all attribute names and their values
-
-            sorted_tuple = dict(sorted(submission_attrs.items(), key=lambda x: x[0]))
-            for attr_name in sorted_tuple:
-                if counter == 3:
-                    print(f"{attr_name}: {sorted_tuple[attr_name]}")
-            '''
-
-            if 'link_title' in submission_attrs:
-                title = sub.link_title
-                url = sub.link_url
-            elif 'title' in submission_attrs:
-                title = sub.title
-                url = sub.url
-
-        counter += 1
         sub_created = convert_unix_time(sub.created)
         print('------------------------------------')
-        log('#{counter}', counter=counter)
+        log('#{counter}', counter=i+1)
         log('TITLE: {title}', title=title)
         log('CREATED AT: {sub_created}', sub_created=sub_created)
         log('URL: {url}', url=url)
@@ -80,7 +62,6 @@ def parse(**params):
         elif type == 'redditor':
             log('POSTED TO: {posted_to}', posted_to=posted_to)
 
-        # Get file
         get_file(url, path)
 
     log('Parsing completed!')
