@@ -1,0 +1,11 @@
+name: flake8
+on: [push]
+jobs:
+  linter-check:
+    runs-on: ubuntu-latest 
+    steps:
+    -  uses: actions/checkout@v3
+    -  name: linter-check 
+       run: |
+            pip3 install flake8
+            python3 -m flake8 reddit_img_parser
