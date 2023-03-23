@@ -1,18 +1,31 @@
 from reddit_img_parser.reddit import get_reddit_entry, get_submissions
 
+def get_key_entry(sub, type):
+    return sub.subreddit if type == 'redditor' else sub.author
+
+
+def get_key_name(key_entry, type):
+    return key_entry.display_name if type == 'redditor' else key_entry.name
+
 
 def get_statistics(**params):
     type = params.get('parse_type', None)
     name = params.get('name', None)
-    category = params.get('category', None)
-    time_filter = params.get('time_filter', None)
-    limit = params.get('limit', None)
 
     entry = get_reddit_entry(type, name)
     if not entry:
         return
 
-    submissions = get_submissions(entry, type, category, limit, time_filter)
+    submissions_params = {
+        'entry': entry,
+        'parse_type': type,
+        'category': params.get('category', None),
+        'limit': params.get('limit', None),
+        'time_filter': params.get('time_filter', None)
+    }
+
+    submissions = get_submissions(**submissions_params)
+
     if not submissions:
         return
 
@@ -21,19 +34,10 @@ def get_statistics(**params):
     print('Processing... ')
 
     for sub in submissions:
-        if type == 'redditor':
-            key_entry = sub.subreddit
-        else:
-            key_entry = sub.author
-
+        key_entry = get_key_entry(sub, type)
         if not key_entry:
             continue
-
-        if type == 'redditor':
-            key_name = key_entry.display_name
-        else:
-            key_name = key_entry.name
-
+        key_name = get_key_name(key_entry, type)
         if key_name not in statistics_data:
             statistics_data[key_name] = 1
         else:
