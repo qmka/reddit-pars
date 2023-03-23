@@ -86,11 +86,29 @@ def get_file_media_type(filename, url, folder):
     return (media_type, readed_data)
 '''
 
+def get_uncommon_media_type(filename, url, folder):
+    readed_data = ''
+    log('For this media_type of file we need to download additional info')
+    status = download_by_direct_link(url, folder)
+    if status != 200:
+        media_type = "broken"
+    else:
+        filepath = os.path.join(folder, filename)
+        with open(filepath, 'r') as f:
+            readed_data = f.read()
+        os.remove(filepath)
+        if is_rg(readed_data):
+            media_type = 'rg'
+        elif is_imgur_no_ex(readed_data):
+            media_type = 'imgur_no_ex'
+        else:
+            media_type = 'other'
+    return (media_type, readed_data)
+
 def get_file_media_type(filename, url, folder):
     common_extensions = ['.jpg', '.gif', '.jpeg', '.mp4', '.png']
-    readed_data = ''
     file_extension = os.path.splitext(filename)[1]
-
+    readed_data = ''
     # 3. Определяем тип файла
     if file_extension in common_extensions:
         media_type = 'common'
@@ -101,22 +119,7 @@ def get_file_media_type(filename, url, folder):
     elif url.endswith('/'):
         media_type = 'folder'
     else:
-        log('For this media_type of file we need to download additional info')
-        # print(f"URL is {url} ... folder is {folder}")
-        status = download_by_direct_link(url, folder)
-        if status != 200:
-            media_type = "broken"
-        else:
-            filepath = os.path.join(folder, filename)
-            with open(filepath, 'r') as f:
-                readed_data = f.read()
-            os.remove(filepath)
-            if is_rg(readed_data):
-                media_type = 'rg'
-            elif is_imgur_no_ex(readed_data):
-                media_type = 'imgur_no_ex'
-            else:
-                media_type = 'other'
+        media_type, readed_data = get_uncommon_media_type(filename, url, folder)
     return (media_type, readed_data)
 
 def is_file_exists(media_type, folder, filename, readed_data):
