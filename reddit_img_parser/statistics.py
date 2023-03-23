@@ -1,3 +1,4 @@
+from functools import reduce
 from reddit_img_parser.reddit import get_reddit_entry, get_submissions
 
 def get_key_entry(sub, type):
@@ -28,23 +29,22 @@ def get_statistics(**params):
 
     if not submissions:
         return
-
-    statistics_data = {}
-
     print('Processing... ')
-
-    for sub in submissions:
-        key_entry = get_key_entry(sub, type)
-        if not key_entry:
-            continue
-        key_name = get_key_name(key_entry, type)
-        if key_name not in statistics_data:
-            statistics_data[key_name] = 1
-        else:
-            statistics_data[key_name] += 1
-
+    statistics_data = reduce(lambda sd, sub: add_to_statistics_data(sd, sub, type), submissions, {})
+    
     print(f"Statistics to: {name}")
     print((21 + len(name)) * '-')
     sorted_data = dict(sorted(statistics_data.items(), key=lambda item: -item[1]))
-    for el in sorted_data:
-        print(f"{el}: {sorted_data[el]}")
+    list(map(lambda el: print(f"{el}: {sorted_data[el]}"), sorted_data))
+
+
+def add_to_statistics_data(statistics_data, sub, type):
+    key_entry = get_key_entry(sub, type)
+    if not key_entry:
+        return statistics_data
+    key_name = get_key_name(key_entry, type)
+    if key_name not in statistics_data:
+        statistics_data[key_name] = 1
+    else:
+        statistics_data[key_name] += 1
+    return statistics_data
