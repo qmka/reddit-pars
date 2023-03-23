@@ -3,17 +3,33 @@ from reddit_img_parser.download import get_file
 from reddit_img_parser.reddit import get_reddit_entry, get_submissions
 
 
+def get_submission_attrs(sub, type):
+    if type == 'subreddit':
+        return {
+            'title': sub.title,
+            'author': sub.author,
+            'url': sub.url,
+            'posted_to': None
+        }
+    elif type == 'redditor':
+        attrs = vars(sub)
+        return {
+            'title': attrs.get('link_title') or attrs.get('title'),
+            'author': None,
+            'url': attrs.get('link_url') or attrs.get('url'),
+            'posted_to': sub.subreddit
+        }
+
+
 def parse_submissions(submissions, type, path):
     for i, sub in enumerate(submissions):
-        if type == 'subreddit':
-            title, author, url = sub.title, sub.author, sub.url
-        elif type == 'redditor':
-            sub_attrs = vars(sub)
-            posted_to = sub.subreddit
-            title = sub_attrs.get('link_title') or sub_attrs.get('title')
-            url = sub_attrs.get('link_url') or sub_attrs.get('url')
-
+        sub_attrs = get_submission_attrs(sub, type)
+        title = sub_attrs.get('title', None)
+        author = sub_attrs.get('author', None)
+        url = sub_attrs.get('url', None)
+        posted_to = sub_attrs.get('posted_to', None)
         sub_created = convert_unix_time(sub.created)
+
         print('------------------------------------')
         log('#{counter}', counter=i+1)
         log('TITLE: {title}', title=title)
