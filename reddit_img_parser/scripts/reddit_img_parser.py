@@ -11,10 +11,10 @@ def parse_args():
 
     parser = argparse.ArgumentParser(description=app_desc)
     parser.add_argument('name')
-    parser.add_argument('-a', '--statistics',
+    parser.add_argument('-s', '--statistics',
                         action='store_true', required=False)
     parser.add_argument('-b', '--batch', action='store_true', required=False)
-    parser.add_argument('-s', '--subreddit',
+    parser.add_argument('-r', '--subreddit',
                         action='store_true', required=False)
     parser.add_argument('-u', '--user', action='store_true', required=False)
     parser.add_argument('-c', '--category', help='set category of posts',
