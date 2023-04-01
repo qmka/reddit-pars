@@ -8,7 +8,9 @@ coverage.xml
 .pytest_cache/
 .vim
 images/
-parser.log
+*.log
 .env
 tmp
-batch.txt
+*.txt
+*.json
+digest.py
