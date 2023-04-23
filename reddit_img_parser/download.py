@@ -154,9 +154,10 @@ def gallery_type_handler(url, folder, filename):
 def rg_type_handler(media_type, folder, filename, readed_data):
     if is_file_exists(media_type, folder, filename, readed_data):
         return
-    log("{filename} will be downloaded with external module...",
-        filename=filename)
-    print("Downloading |####### no progress bar ########|")
+    # Uncomment next lines for using external downloading module
+    # log("{filename} will be downloaded with external module...",
+    #     filename=filename)
+    # print("Downloading |####### no progress bar ########|")
     rg_id = get_rg_id(readed_data)
     final_filename = f"{rg_id}.mp4"
     filepath = os.path.join(folder, final_filename)
@@ -164,7 +165,7 @@ def rg_type_handler(media_type, folder, filename, readed_data):
     if status is True:
         log("{filename} saved", filename=filename)
     else:
-        log("{filename} didn't saved")
+        log("{filename} didn't saved", filename=filename)
 
 
 def gifv_type_handler(media_type, folder, filename, readed_data):

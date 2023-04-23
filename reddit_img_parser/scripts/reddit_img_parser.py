@@ -2,6 +2,7 @@
 import argparse
 from reddit_img_parser.app import parse, batch_parse
 from reddit_img_parser.statistics import get_statistics
+from reddit_img_parser.digest import digest_ui
 
 
 def parse_args():
@@ -10,10 +11,11 @@ def parse_args():
     time_filters = ['hour', 'day', 'week', 'month', 'year', 'all']
 
     parser = argparse.ArgumentParser(description=app_desc)
-    parser.add_argument('name')
+    parser.add_argument('name', nargs='?')
     parser.add_argument('-s', '--statistics',
                         action='store_true', required=False)
     parser.add_argument('-b', '--batch', action='store_true', required=False)
+    parser.add_argument('-d', '--digest', action='store_true', required=False)
     parser.add_argument('-r', '--subreddit',
                         action='store_true', required=False)
     parser.add_argument('-u', '--user', action='store_true', required=False)
@@ -28,16 +30,23 @@ def parse_args():
 
 def main():
     args = parse_args()
+    if args.digest:
+        digest_ui()
+        return
+
+    if not args.name and not args.digest:
+        print('Please specify a name of object to parse!')
+        return
 
     if not args.user and not args.subreddit:
-        print('use one of the flags: -u USERNAME or -s SUBREDDIT')
+        print('use one of the flags: -u USERNAME or -r SUBREDDIT')
         return
 
     parse_type = 'subreddit' if args.subreddit else 'redditor'
     limit = int(args.limit)
 
     params = {
-        'name': args.name,
+        'name': args.name or '',
         'parse_type': parse_type,
         'category': args.category,
         'limit': limit,
