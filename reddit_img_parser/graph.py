@@ -38,9 +38,17 @@ def get_nodes(attribute=None, bipartite=None):
 
 
 def filter_node(node, attribute, bipartite):
-    a_match = attribute is None or node[1]['attribute'] == attribute
-    b_match = bipartite is None or node[1]['bipartite'] == bipartite
-    return a_match and b_match
+    filters = {
+        'attribute': attribute,
+        'bipartite': bipartite,
+    }
+    matches = []
+    for key, value in filters.items():
+        if value is None:
+            matches.append(True)
+        else:
+            matches.append(node[1][key] == value)
+    return all(matches)
 
 
 def get_name(node):
