@@ -13,4 +13,3 @@ images/
 tmp
 *.txt
 *.json
-digest.py
