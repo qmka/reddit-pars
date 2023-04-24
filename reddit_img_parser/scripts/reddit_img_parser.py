@@ -28,19 +28,23 @@ def parse_args():
     return parser.parse_args()
 
 
+def handle_errors(args):
+    if not args.name and not args.digest:
+        print('Please specify a name of object to parse!')
+        raise SystemExit
+
+    if not args.user and not args.subreddit:
+        print('use one of the flags: -u USERNAME or -r SUBREDDIT')
+        raise SystemExit
+
+
 def main():
     args = parse_args()
     if args.digest:
         digest_ui()
         return
 
-    if not args.name and not args.digest:
-        print('Please specify a name of object to parse!')
-        return
-
-    if not args.user and not args.subreddit:
-        print('use one of the flags: -u USERNAME or -r SUBREDDIT')
-        return
+    handle_errors(args)
 
     parse_type = 'subreddit' if args.subreddit else 'redditor'
     limit = int(args.limit)

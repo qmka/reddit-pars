@@ -50,10 +50,7 @@ def download_favorites(instance_type):
         ui_t_filter = input("Type time filter. "
                             "Recommend to use week or month. ")
         print(f"Downloading your favorities updates for last {ui_t_filter}...")
-        if instance_type == TYPE_REDDITOR:
-            favorites = get_favorite_redditors()
-        elif instance_type == TYPE_SUBREDDIT:
-            favorites = get_favorite_subreddits()
+        favorites = get_favorites(instance_type)
         for instance in favorites:
             print(f"Downloading for {instance}")
             params = {
@@ -70,11 +67,9 @@ def download_favorites(instance_type):
 def get_favorites(instance_type):
     if instance_type == TYPE_REDDITOR:
         instances = get_favorite_redditors()
-        connected_instance_type = TYPE_SUBREDDIT
     elif instance_type == TYPE_SUBREDDIT:
         instances = get_favorite_subreddits()
-        connected_instance_type = TYPE_REDDITOR
-    return instances, connected_instance_type
+    return instances
 
 
 def get_news(instance_type):
@@ -83,6 +78,14 @@ def get_news(instance_type):
     elif instance_type == TYPE_SUBREDDIT:
         instances = get_new_subreddits()
     return instances
+
+
+def get_connected_instance_type(instance_type):
+    if instance_type == TYPE_REDDITOR:
+        connected_instance_type = TYPE_SUBREDDIT
+    elif instance_type == TYPE_SUBREDDIT:
+        connected_instance_type = TYPE_REDDITOR
+    return connected_instance_type
 
 
 def make_connected_instances(submissions, instance_type):
@@ -101,7 +104,8 @@ def make_connected_instances(submissions, instance_type):
 def seek_for_new_instances(instance_type):
     print('Prepare to process...')
 
-    instances, connected_instance_type = get_favorites(instance_type)
+    instances = get_favorites(instance_type)
+    connected_instance_type = get_connected_instance_type(instance_type)
 
     for instance in instances:
         print(f"Processing {instance}")
@@ -144,7 +148,7 @@ def process_new_instances(instance_type):
                 'time_filter': 'week'
             }
             parse(**params)
-        ui_make_fav = input(f"Change status of {instance} to favorite? (y/n)")
+        ui_make_fav = input(f"Change status of {instance} to favorite? (y/n) ")
         if ui_make_fav in ANSWER_YES:
             set_status(instance, STATUS_FAVORITE)
             print(f"The status of {instance} is set to 'New'!")
