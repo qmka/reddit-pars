@@ -31,12 +31,16 @@ def get_nodes(attribute=None, bipartite=None):
     G = load_graph()
     nodes = []
     for node in G.nodes(data=True):
-        if attribute is not None and node[1]['attribute'] != attribute:
-            continue
-        if bipartite is not None and node[1]['bipartite'] != bipartite:
+        if not filter_node(node, attribute, bipartite):
             continue
         nodes.append(node[0])
     return nodes
+
+
+def filter_node(node, attribute, bipartite):
+    a_match = attribute is None or node[1]['attribute'] == attribute
+    b_match = bipartite is None or node[1]['bipartite'] == bipartite
+    return a_match and b_match
 
 
 def get_name(node):
