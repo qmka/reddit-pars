@@ -138,24 +138,32 @@ def process_new_instances(instance_type):
         print(f"There are no new {instance_type}s!")
         return
     for instance in new_instances:
-        ui_want_to_download = input(f"Качаем для {instance}? ")
-        if ui_want_to_download in ANSWER_YES:
-            params = {
-                'name': instance,
-                'parse_type': instance_type,
-                'category': 'top',
-                'limit': 20,
-                'time_filter': 'week'
-            }
-            parse(**params)
-        ui_make_fav = input(f"Change status of {instance} to favorite? (y/n) ")
-        if ui_make_fav in ANSWER_YES:
-            set_status(instance, STATUS_FAVORITE)
-            print(f"The status of {instance} is set to 'New'!")
-        else:
-            set_status(instance, STATUS_COMMON)
-            print(f"The status of {instance} is set to 'Common'!")
-            print("You can delete it's folder manually")
+        ask_to_download(instance, instance_type)
+        ask_to_set_status(instance)
+
+
+def ask_to_download(instance, instance_type):
+    ui_want_to_download = input(f"Качаем для {instance}? ")
+    if ui_want_to_download in ANSWER_YES:
+        params = {
+            'name': instance,
+            'parse_type': instance_type,
+            'category': 'top',
+            'limit': 20,
+            'time_filter': 'week'
+        }
+        parse(**params)
+
+
+def ask_to_set_status(instance):
+    ui_make_fav = input(f"Change status of {instance} to favorite? (y/n) ")
+    if ui_make_fav in ANSWER_YES:
+        set_status(instance, STATUS_FAVORITE)
+        print(f"The status of {instance} is set to 'New'!")
+    else:
+        set_status(instance, STATUS_COMMON)
+        print(f"The status of {instance} is set to 'Common'!")
+        print("You can delete it's folder manually")
 
 
 def set_status(node, status):
