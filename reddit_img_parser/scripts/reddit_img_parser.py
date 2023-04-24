@@ -15,7 +15,7 @@ def parse_args():
     parser.add_argument('-s', '--statistics',
                         action='store_true', required=False)
     parser.add_argument('-b', '--batch', action='store_true', required=False)
-    parser.add_argument('-d', '--digest', action='store_true', required=False)
+    parser.add_argument('-d', '--data', action='store_true', required=False)
     parser.add_argument('-r', '--subreddit',
                         action='store_true', required=False)
     parser.add_argument('-u', '--user', action='store_true', required=False)
