@@ -1,7 +1,6 @@
 from reddit_img_parser.reddit import get_reddit_entry, get_submissions
 from reddit_img_parser.app import get_submission_attrs, parse
-from reddit_img_parser.graph import load_graph, save_graph
-from reddit_img_parser.graph import get_nodes, get_nodes_with_bipartite
+from reddit_img_parser.graph import load_graph, save_graph, get_nodes
 
 STATUS_NEW = 'new'
 STATUS_COMMON = 'common'
@@ -204,24 +203,24 @@ def connect_redditor_to_subreddit(redditor, sub):
 
 
 def get_redditors():
-    return get_nodes_with_bipartite(0)
+    return get_nodes(bipartite=0)
 
 
 def get_subreddits():
-    return get_nodes_with_bipartite(1)
+    return get_nodes(bipartite=1)
 
 
 def get_favorite_subreddits():
-    return get_nodes(STATUS_FAVORITE, 1)
+    return get_nodes(attribute=STATUS_FAVORITE, bipartite=1)
 
 
 def get_favorite_redditors():
-    return get_nodes(STATUS_FAVORITE, 0)
+    return get_nodes(attribute=STATUS_FAVORITE, bipartite=0)
 
 
 def get_new_redditors():
-    return get_nodes(STATUS_NEW, 0)
+    return get_nodes(attribute=STATUS_NEW, bipartite=0)
 
 
 def get_new_subreddits():
-    return get_nodes(STATUS_NEW, 1)
+    return get_nodes(attribute=STATUS_NEW, bipartite=1)
