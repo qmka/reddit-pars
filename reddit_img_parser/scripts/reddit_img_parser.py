@@ -29,7 +29,7 @@ def parse_args():
 
 
 def handle_errors(args):
-    if not args.name and not args.digest:
+    if not args.name and not args.data:
         print('Please specify a name of object to parse!')
         raise SystemExit
 
@@ -40,7 +40,7 @@ def handle_errors(args):
 
 def main():
     args = parse_args()
-    if args.digest:
+    if args.data:
         digest_ui()
         return
 
