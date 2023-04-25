@@ -4,8 +4,6 @@ import os
 
 from dotenv import load_dotenv
 
-from reddit_img_parser.utils import log
-
 
 def is_valid_reddit_instance(instance, obj_type):
     try:
@@ -71,8 +69,7 @@ def get_submissions(**submission_params):
 def get_rising_subs(entry, parse_type, limit):
     if parse_type == 'redditor':
         print("'Rising' category doesn't exists "
-                "for redditors, try different!")
+              "for redditors, try different!")
         return None
     else:
         return entry.rising(limit=limit)
-
