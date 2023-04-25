@@ -56,18 +56,23 @@ def get_submissions(**submission_params):
     time_filter = submission_params.get('time_filter', None)
     limit = submission_params.get('limit', None)
 
-    match category:
-        case 'rising':
-            if parse_type == 'redditor':
-                log("'Rising' category doesn't exists "
-                    "for redditors, try different!")
-                return None
-            else:
-                submissions = entry.rising(limit=limit)
-        case 'hot':
-            submissions = entry.hot(limit=limit)
-        case 'new':
-            submissions = entry.new(limit=limit)
-        case 'top':
-            submissions = entry.top(limit=limit, time_filter=time_filter)
+    categories = {
+        'rising': lambda: get_rising_subs(entry, parse_type, limit),
+        'hot': lambda: entry.hot(limit=limit),
+        'new': lambda: entry.new(limit=limit),
+        'top': lambda: entry.top(limit=limit, time_filter=time_filter)
+    }
+
+    submissions = categories[category]()
+
     return submissions
+
+
+def get_rising_subs(entry, parse_type, limit):
+    if parse_type == 'redditor':
+        print("'Rising' category doesn't exists "
+                "for redditors, try different!")
+        return None
+    else:
+        return entry.rising(limit=limit)
+
