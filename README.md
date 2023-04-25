@@ -1,9 +1,22 @@
 [![Maintainability](https://api.codeclimate.com/v1/badges/92d18413fdc52546576d/maintainability)](https://codeclimate.com/github/qmka/reddit-pars/maintainability)
 [![flake8](https://github.com/qmka/reddit-pars/actions/workflows/flake8.yml/badge.svg)](https://github.com/qmka/reddit-pars/actions/workflows/flake8.yml)
 
-Console utility to parse images from Reddit
+Console utility to parse media from Reddit
 
-Usage:
+Install
+- from pip
+```
+pip install reddit-img-parser
+```
+
+- from sources
+You need to install [Poetry](https://python-poetry.org/docs/) package manager first. Then:
+```
+poetry install
+poetry run reddit-img-parser ... # look for usage section below
+```
+
+Usage
 ```
 reddit-img-parser [-h] [-s] [-b] [-d] [-r] [-u]
                   [-c {hot,new,rising,top}]
