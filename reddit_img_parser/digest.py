@@ -96,7 +96,7 @@ def make_connected_instances(submissions, instance_type):
         if author:
             connected_instances.append(author.name)
         elif posted_to:
-            connected_instances.append(posted_to.name)
+            connected_instances.append(posted_to.display_name)
     return connected_instances
 
 
@@ -122,13 +122,13 @@ def seek_for_new_instances(instance_type):
             instance_type
         )
 
-    uniq_connected_instances = list(set(connected_instances))
-    for instance in uniq_connected_instances:
-        if connected_instance_type == TYPE_REDDITOR:
-            add_redditor(instance)
-        elif connected_instance_type == TYPE_SUBREDDIT:
-            add_subreddit(instance)
-    print('Done!')
+        uniq_connected_instances = list(set(connected_instances))
+        for instance in uniq_connected_instances:
+            if connected_instance_type == TYPE_REDDITOR:
+                add_redditor(instance)
+            elif connected_instance_type == TYPE_SUBREDDIT:
+                add_subreddit(instance)
+        print('Done!')
 
 
 def process_new_instances(instance_type):
@@ -188,7 +188,7 @@ def add_redditor(name):
 
 def add_subreddit(name):
     G = load_graph()
-    if not G.has_node(name) and name[:3] != 't5_':
+    if not G.has_node(name) and name[:3] != 't5_' and name[:2] != 'u_':
         G.add_node(name, bipartite=1)
         G.nodes[name]['attribute'] = STATUS_NEW
         save_graph(G)
