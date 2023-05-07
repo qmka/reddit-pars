@@ -31,23 +31,26 @@ def download_file(url, filepath, filename, is_pre):
             log(f"Length is {total_length} bytes: probably not a media file",
                 total_length=total_length)
             return 400
-
-        block_size = 1024
-        written = 0
-        bar = Bar('Downloading', max=None, suffix='%(percent)d%%')
-        with open(filepath, "wb") as f:
-            for data in response.iter_content(block_size):
-                written += len(data)
-                f.write(data)
-                if bar.max is None:
-                    bar.max = max(written, total_length)
-                bar.next(len(data))
-        bar.finish()
+        download_with_bar(filepath, response, total_length)
         return response.status_code
 
     except requests.exceptions.RequestException as e:
         log("Error while downloading {filename}: {e}", filename=filename, e=e)
         return getattr(e.response, "status_code", 400)
+
+
+def download_with_bar(filepath, response, total_length):
+    block_size = 1024
+    written = 0
+    bar = Bar('Downloading', max=None, suffix='%(percent)d%%')
+    with open(filepath, "wb") as f:
+        for data in response.iter_content(block_size):
+            written += len(data)
+            f.write(data)
+            if bar.max is None:
+                bar.max = max(written, total_length)
+            bar.next(len(data))
+    bar.finish()
 
 
 def download_by_direct_link(url, folder, is_pre=False):

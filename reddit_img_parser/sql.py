@@ -121,21 +121,23 @@ def set_status(entry_type, name, status):
     cursor = conn.cursor()
 
     cursor.execute(f"SELECT name, status FROM {table}")
-    rows = cursor.fetchall()
+    cursor.execute(f"SELECT name, status \
+                     FROM {table} \
+                     WHERE name = ?",
+                   (name,))
+    row = cursor.fetchone()
 
-    for row in rows:
-        if row[0] == name:
-            if row[1] != status:
-                cursor.execute(f"UPDATE {table} \
-                                 SET status = ? \
-                                 WHERE name = ?",
-                               (status, name))
-                conn.commit()
-                operation_status = True
-                error_code = ERROR_0
-            else:
-                error_code = ERROR_3
-
+    if row is not None:
+        if row[1] != status:
+            cursor.execute(f"UPDATE {table} \
+                                SET status = ? \
+                                WHERE name = ?",
+                           (status, name))
+            conn.commit()
+            operation_status = True
+            error_code = ERROR_0
+        else:
+            error_code = ERROR_3
     conn.close()
     return operation_status, error_code
 
@@ -159,9 +161,6 @@ def get_status(entry_type, name):
 
 
 def connect_nodes(name1, name2):
-    operation_status = False
-    error_code = ERROR_4
-
     conn = sqlite3.connect(DATABASE)
     cursor = conn.cursor()
     cursor.execute("SELECT name FROM redditors")
@@ -171,58 +170,12 @@ def connect_nodes(name1, name2):
     subreddit_names = [row[0] for row in cursor.fetchall()]
 
     if name1 in redditor_names and name2 in subreddit_names:
-        redditor_name = name1
-        subreddit_name = name2
+        redditor_name, subreddit_name = name1, name2
     elif name1 in subreddit_names and name2 in redditor_names:
-        redditor_name = name2
-        subreddit_name = name1
+        redditor_name, subreddit_name = name2, name1
     else:
         conn.close()
-        return operation_status, error_code
-
-    cursor.execute("SELECT redditor_name, subreddit_name \
-                    FROM connections \
-                    WHERE redditor_name=? \
-                    AND subreddit_name=?",
-                   (redditor_name, subreddit_name))
-    existing_subscription = cursor.fetchone()
-
-    if existing_subscription is None:
-        cursor.execute("INSERT INTO connections \
-                        (redditor_name, subreddit_name) \
-                        VALUES (?, ?)",
-                       (redditor_name, subreddit_name))
-        conn.commit()
-        operation_status = True
-        error_code = ERROR_0
-    else:
-        error_code = ERROR_5
-
-    conn.close()
-    return operation_status, error_code
-
-
-def disconnect_nodes(name1, name2):
-    operation_status = False
-    error_code = ERROR_4
-
-    conn = sqlite3.connect(DATABASE)
-    cursor = conn.cursor()
-    cursor.execute("SELECT name FROM redditors")
-    redditor_names = [row[0] for row in cursor.fetchall()]
-
-    cursor.execute("SELECT name FROM subreddits")
-    subreddit_names = [row[0] for row in cursor.fetchall()]
-
-    if name1 in redditor_names and name2 in subreddit_names:
-        redditor_name = name1
-        subreddit_name = name2
-    elif name1 in subreddit_names and name2 in redditor_names:
-        redditor_name = name2
-        subreddit_name = name1
-    else:
-        conn.close()
-        return operation_status, error_code
+        return False, ERROR_4
 
     cursor.execute("SELECT redditor_name, subreddit_name \
                     FROM connections \
@@ -232,15 +185,51 @@ def disconnect_nodes(name1, name2):
     existing_subscription = cursor.fetchone()
 
     if existing_subscription is not None:
-        cursor.execute("DELETE FROM connections \
-                        WHERE (redditor_name=? AND subreddit_name=?) \
-                        OR (redditor_name=? AND subreddit_name=?)",
-                       (name1, name2, name2, name1))
-        conn.commit()
-        operation_status = True
-        error_code = ERROR_0
-    else:
-        error_code = ERROR_6
+        conn.close()
+        return False, ERROR_5
 
+    cursor.execute("INSERT INTO connections \
+                    (redditor_name, subreddit_name) \
+                    VALUES (?, ?)",
+                   (redditor_name, subreddit_name))
+    conn.commit()
     conn.close()
-    return operation_status, error_code
+    return True, ERROR_0
+
+
+def disconnect_nodes(name1, name2):
+
+    conn = sqlite3.connect(DATABASE)
+    cursor = conn.cursor()
+    cursor.execute("SELECT name FROM redditors")
+    redditor_names = [row[0] for row in cursor.fetchall()]
+
+    cursor.execute("SELECT name FROM subreddits")
+    subreddit_names = [row[0] for row in cursor.fetchall()]
+
+    if name1 in redditor_names and name2 in subreddit_names:
+        redditor_name, subreddit_name = name1, name2
+    elif name1 in subreddit_names and name2 in redditor_names:
+        redditor_name, subreddit_name = name2, name1
+    else:
+        conn.close()
+        return False, ERROR_4
+
+    cursor.execute("SELECT redditor_name, subreddit_name \
+                    FROM connections \
+                    WHERE redditor_name=? \
+                    AND subreddit_name=?",
+                   (redditor_name, subreddit_name))
+    existing_subscription = cursor.fetchone()
+
+    if existing_subscription is None:
+        conn.close()
+        return False, ERROR_6
+
+    cursor.execute("DELETE FROM connections \
+                    WHERE (redditor_name=? AND subreddit_name=?) \
+                    OR (redditor_name=? AND subreddit_name=?)",
+                   (name1, name2, name2, name1))
+    conn.commit()
+    conn.close()
+    return True, ERROR_0

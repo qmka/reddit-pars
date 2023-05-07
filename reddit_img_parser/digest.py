@@ -140,14 +140,19 @@ def seek_for_new_instances(instance_type):
         )
 
         uniq_connected_instances = list(set(connected_instances))
-        for instance in uniq_connected_instances:
-            if connected_instance_type == TYPE_REDDITOR:
-                add_redditor(instance, STATUS_NEW)
-            elif connected_instance_type == TYPE_SUBREDDIT and \
-                    instance[:3] != 't5_' and \
-                    instance[:2] != 'u_':
-                add_subreddit(instance, STATUS_NEW)
+        process_connected_instances(uniq_connected_instances,
+                                    connected_instance_type)
         print('Done!')
+
+
+def process_connected_instances(instances, connected_instance_type):
+    for instance in instances:
+        if connected_instance_type == TYPE_REDDITOR:
+            add_redditor(instance, STATUS_NEW)
+        elif connected_instance_type == TYPE_SUBREDDIT and \
+                instance[:3] != 't5_' and \
+                instance[:2] != 'u_':
+            add_subreddit(instance, STATUS_NEW)
 
 
 def process_new_instances(instance_type):
