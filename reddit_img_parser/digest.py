@@ -1,8 +1,16 @@
-from reddit_img_parser.reddit import get_reddit_entry, get_submissions
-from reddit_img_parser.app import get_submission_attrs, parse
-from reddit_img_parser.sql import get_nodes, set_status, add_node
-from reddit_img_parser.constants import STATUS_NEW, STATUS_COMMON, STATUS_FAVORITE
-from reddit_img_parser.constants import TYPE_REDDITOR, TYPE_SUBREDDIT
+from reddit_img_parser.reddit import get_reddit_entry
+from reddit_img_parser.reddit import get_submissions
+from reddit_img_parser.app import get_submission_attrs
+from reddit_img_parser.app import parse
+from reddit_img_parser.sql import init_db
+from reddit_img_parser.sql import get_nodes
+from reddit_img_parser.sql import set_status
+from reddit_img_parser.sql import add_node
+from reddit_img_parser.constants import STATUS_NEW
+from reddit_img_parser.constants import STATUS_COMMON
+from reddit_img_parser.constants import STATUS_FAVORITE
+from reddit_img_parser.constants import TYPE_REDDITOR
+from reddit_img_parser.constants import TYPE_SUBREDDIT
 from reddit_img_parser.constants import ANSWER_YES
 
 
@@ -15,6 +23,7 @@ def digest_ui():
     print('6. Process new redditors from database')
     print('7. Add subreddit to database')
     print('8. Add redditor to database')
+    print('DB. Make empty database')
     print('0. Quit')
 
     ui_menu_choise = input('What to do? ')
@@ -30,7 +39,8 @@ def digest_ui():
         '5': lambda: process_new_instances(TYPE_SUBREDDIT),
         '6': lambda: process_new_instances(TYPE_REDDITOR),
         '7': lambda: add_instance_ui(TYPE_SUBREDDIT),
-        '8': lambda: add_instance_ui(TYPE_REDDITOR)
+        '8': lambda: add_instance_ui(TYPE_REDDITOR),
+        'DD': lambda: make_empty_db()
     }
 
     if ui_menu_choise not in menu_functions:
@@ -38,6 +48,15 @@ def digest_ui():
     else:
         menu_functions[ui_menu_choise]()
 
+    digest_ui()
+
+
+def make_empty_db():
+    ui_make_new_db = input("Are you sure to make a new database? "
+                           "It will destroy existing db!!!(y/n) ")
+    if ui_make_new_db in ANSWER_YES:
+        init_db()
+        print('New database "reddit.db" is created.')
     digest_ui()
 
 
@@ -124,7 +143,9 @@ def seek_for_new_instances(instance_type):
         for instance in uniq_connected_instances:
             if connected_instance_type == TYPE_REDDITOR:
                 add_redditor(instance, STATUS_NEW)
-            elif connected_instance_type == TYPE_SUBREDDIT and instance[:3] != 't5_' and instance[:2] != 'u_':
+            elif connected_instance_type == TYPE_SUBREDDIT and \
+                    instance[:3] != 't5_' and \
+                    instance[:2] != 'u_':
                 add_subreddit(instance, STATUS_NEW)
         print('Done!')
 
@@ -173,6 +194,16 @@ def add_redditor(name, status):
     return is_added
 
 
+def add_subreddit(name, status):
+    if name[:3] != 't5_' and name[:2] != 'u_':
+        is_added = add_node(TYPE_SUBREDDIT, name, status)
+        if is_added:
+            print(f"Subreddit {name} successfully added "
+                  f"to database with '{status}' status.")
+        return True
+    return False
+
+
 def add_instance_ui(instance_type):
     name_ui = input(f"Type {instance_type}'s name: ")
     while True:
@@ -180,22 +211,24 @@ def add_instance_ui(instance_type):
         status = get_status_from_ui(status_ui)
         if status:
             break
-    
+
     # Check validity
     print('Checking entry...')
     entry = get_reddit_entry(instance_type, name_ui)
     if not entry:
         return
-     
-    if instance_type == TYPE_REDDITOR:
-        result = add_redditor(name_ui, status)
-    elif instance_type == TYPE_SUBREDDIT:
-        result = add_subreddit(name_ui, status)
-    
+    result = add_instance_by_type(instance_type, name_ui, status)
     if not result:
         print(f"{name_ui} is already in database")
-    
     return
+
+
+def add_instance_by_type(instance_type, name, status):
+    if instance_type == TYPE_REDDITOR:
+        result = add_redditor(name, status)
+    elif instance_type == TYPE_SUBREDDIT:
+        result = add_subreddit(name, status)
+    return result
 
 
 def get_status_from_ui(status_ui):
@@ -207,16 +240,6 @@ def get_status_from_ui(status_ui):
     if status_ui in statuses:
         return statuses[status_ui]
     return None
-
-
-def add_subreddit(name, status):
-    if name[:3] != 't5_' and name[:2] != 'u_':
-        is_added = add_node(TYPE_SUBREDDIT, name, status)
-        if is_added:
-            print(f"Subreddit {name} successfully added "
-                f"to database with '{status}' status.")
-        return True
-    return False
 
 
 def get_redditors():

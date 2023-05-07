@@ -12,81 +12,48 @@ ERROR_5 = "Connection already exists."
 ERROR_6 = "Connection doesn't exists."
 
 
-def init():
-    # Соединение с базой данных (если база данных не существует, то она будет создана)
+def init_db():
     conn = sqlite3.connect(DATABASE)
-
-    # Создание таблицы redditors
     conn.execute('''CREATE TABLE redditors
                 (name TEXT PRIMARY KEY NOT NULL,
                 status TEXT NOT NULL)''')
-
-    # Создание таблицы subreddits
     conn.execute('''CREATE TABLE subreddits
                 (name TEXT PRIMARY KEY NOT NULL,
                 status TEXT NOT NULL)''')
-
-    # Создание таблицы connections
     conn.execute('''CREATE TABLE connections
                 (redditor_name TEXT NOT NULL,
                 subreddit_name TEXT NOT NULL,
                 PRIMARY KEY (redditor_name, subreddit_name),
                 FOREIGN KEY (redditor_name) REFERENCES redditors(name),
                 FOREIGN KEY (subreddit_name) REFERENCES subreddits(name))''')
-
-    # Сохранение изменений и закрытие соединения с базой данных
     conn.commit()
     conn.close()
 
-
-def add_sample_data():
-    conn = sqlite3.connect(DATABASE)
-
-    # Создаем курсор
-    cursor = conn.cursor()
-
-    # Вставляем пользователей
-    cursor.execute("INSERT INTO redditors (name, status) VALUES ('420mistress', 'favorite')")
-    cursor.execute("INSERT INTO redditors (name, status) VALUES ('AellaGirl', 'favorite')")
-
-    # Вставляем сайты
-    cursor.execute("INSERT INTO subreddits (name, status) VALUES ('thickwhitegirls', 'new')")
-    cursor.execute("INSERT INTO subreddits (name, status) VALUES ('chubby', 'favorite')")
-    cursor.execute("INSERT INTO subreddits (name, status) VALUES ('gonewild', 'new')")
-
-    # Вставляем связи
-    conn.execute("INSERT INTO connections (redditor_name, subreddit_name) VALUES ('420mistress', 'thickwhitegirls')")
-    conn.execute("INSERT INTO connections (redditor_name, subreddit_name) VALUES ('420mistress', 'chubby')")
-    conn.execute("INSERT INTO connections (redditor_name, subreddit_name) VALUES ('AellaGirl', 'gonewild')")
-
-    # Сохраняем изменения
-    conn.commit()
-
-    # Закрываем соединение
-    conn.close()
-
-
-# init()
-# add_sample_data()
 
 def fill_tables():
     G = load_graph()
 
     conn = sqlite3.connect(DATABASE)
     cursor = conn.cursor()
-    
+
     for node in G.nodes(data=True):
         name = node[0]
         attr = node[1]['attribute']
         bip = node[1]['bipartite']
-        if bip == 0: # реддитор
-            cursor.execute("INSERT INTO redditors (name, status) VALUES (?, ?)", (name, attr))
+        if bip == 0:
+            cursor.execute("INSERT INTO redditors (name, status) \
+                            VALUES (?, ?)",
+                           (name, attr))
         elif bip == 1:
-            cursor.execute("INSERT INTO subreddits (name, status) VALUES (?, ?)", (name, attr))
+            cursor.execute("INSERT INTO subreddits (name, status) \
+                            VALUES (?, ?)",
+                           (name, attr))
 
     for edge in G.edges(data=True):
         source, target, void = edge
-        conn.execute("INSERT INTO connections (redditor_name, subreddit_name) VALUES (?, ?)", (source, target))
+        conn.execute("INSERT INTO connections (redditor_name, subreddit_name) \
+                      VALUES (?, ?)",
+                     (source, target))
 
     conn.commit()
     conn.close()
@@ -105,7 +72,8 @@ def add_node(entry_type, name, status):
     cursor.execute(f"SELECT * FROM {table} WHERE name=?", (name,))
     existing_node = cursor.fetchone()
     if existing_node is None:
-        cursor.execute(f"INSERT INTO {table} (name, status) VALUES (?, ?)", (name, status))
+        cursor.execute(f"INSERT INTO {table} (name, status) VALUES (?, ?)",
+                       (name, status))
         conn.commit()
         operation_status = True
     conn.close()
@@ -158,7 +126,10 @@ def set_status(entry_type, name, status):
     for row in rows:
         if row[0] == name:
             if row[1] != status:
-                cursor.execute(f"UPDATE {table} SET status = ? WHERE name = ?", (status, name))
+                cursor.execute(f"UPDATE {table} \
+                                 SET status = ? \
+                                 WHERE name = ?",
+                               (status, name))
                 conn.commit()
                 operation_status = True
                 error_code = ERROR_0
@@ -182,7 +153,7 @@ def get_status(entry_type, name):
     if name in names:
         cursor.execute(f"SELECT status FROM {table} WHERE name=?", (name,))
         status = cursor.fetchone()[0]
-    
+
     conn.close()
     return status
 
@@ -193,10 +164,10 @@ def connect_nodes(name1, name2):
 
     conn = sqlite3.connect(DATABASE)
     cursor = conn.cursor()
-    cursor.execute(f"SELECT name FROM redditors")
+    cursor.execute("SELECT name FROM redditors")
     redditor_names = [row[0] for row in cursor.fetchall()]
 
-    cursor.execute(f"SELECT name FROM subreddits")
+    cursor.execute("SELECT name FROM subreddits")
     subreddit_names = [row[0] for row in cursor.fetchall()]
 
     if name1 in redditor_names and name2 in subreddit_names:
@@ -209,17 +180,24 @@ def connect_nodes(name1, name2):
         conn.close()
         return operation_status, error_code
 
-    cursor.execute("SELECT redditor_name, subreddit_name FROM connections WHERE redditor_name=? AND subreddit_name=?", (redditor_name, subreddit_name))
+    cursor.execute("SELECT redditor_name, subreddit_name \
+                    FROM connections \
+                    WHERE redditor_name=? \
+                    AND subreddit_name=?",
+                   (redditor_name, subreddit_name))
     existing_subscription = cursor.fetchone()
 
     if existing_subscription is None:
-        cursor.execute("INSERT INTO connections (redditor_name, subreddit_name) VALUES (?, ?)", (redditor_name, subreddit_name))
+        cursor.execute("INSERT INTO connections \
+                        (redditor_name, subreddit_name) \
+                        VALUES (?, ?)",
+                       (redditor_name, subreddit_name))
         conn.commit()
         operation_status = True
         error_code = ERROR_0
     else:
         error_code = ERROR_5
-    
+
     conn.close()
     return operation_status, error_code
 
@@ -230,10 +208,10 @@ def disconnect_nodes(name1, name2):
 
     conn = sqlite3.connect(DATABASE)
     cursor = conn.cursor()
-    cursor.execute(f"SELECT name FROM redditors")
+    cursor.execute("SELECT name FROM redditors")
     redditor_names = [row[0] for row in cursor.fetchall()]
 
-    cursor.execute(f"SELECT name FROM subreddits")
+    cursor.execute("SELECT name FROM subreddits")
     subreddit_names = [row[0] for row in cursor.fetchall()]
 
     if name1 in redditor_names and name2 in subreddit_names:
@@ -246,22 +224,23 @@ def disconnect_nodes(name1, name2):
         conn.close()
         return operation_status, error_code
 
-    cursor.execute("SELECT redditor_name, subreddit_name FROM connections WHERE redditor_name=? AND subreddit_name=?", (redditor_name, subreddit_name))
+    cursor.execute("SELECT redditor_name, subreddit_name \
+                    FROM connections \
+                    WHERE redditor_name=? \
+                    AND subreddit_name=?",
+                   (redditor_name, subreddit_name))
     existing_subscription = cursor.fetchone()
 
     if existing_subscription is not None:
-        cursor.execute("DELETE FROM connections WHERE (redditor_name=? AND subreddit_name=?) OR (redditor_name=? AND subreddit_name=?)", (name1, name2, name2, name1))
+        cursor.execute("DELETE FROM connections \
+                        WHERE (redditor_name=? AND subreddit_name=?) \
+                        OR (redditor_name=? AND subreddit_name=?)",
+                       (name1, name2, name2, name1))
         conn.commit()
         operation_status = True
         error_code = ERROR_0
     else:
         error_code = ERROR_6
-    
+
     conn.close()
     return operation_status, error_code
-
-# init()
-# fill_tables()
-# print(add_node('redditors', 'ChikaBomboni2', 'new'))
-# print(disconnect_nodes('RealGirls', '420mistress'))
-# print(remove_node('redditors', 'ChikaBomboni2'))
