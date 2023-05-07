@@ -14,7 +14,7 @@ from reddit_img_parser.rg import get_rg_id
 from reddit_img_parser.rg import download_rg
 
 
-def download_file(url, filepath, filename):
+def download_file(url, filepath, filename, is_pre):
     try:
         headers = {'User-Agent': UserAgent().chrome}
         timeout = 5
@@ -26,6 +26,11 @@ def download_file(url, filepath, filename):
         response.raise_for_status()
 
         total_length = int(response.headers.get("Content-Length", 0))
+        if total_length < 1024 and not is_pre:
+            log(f"Length is {total_length} bytes: probably not a media file",
+                total_length=total_length)
+            return 400
+
         block_size = 1024
         written = 0
         bar = Bar('Downloading', max=None, suffix='%(percent)d%%')
@@ -44,10 +49,10 @@ def download_file(url, filepath, filename):
         return getattr(e.response, "status_code", 400)
 
 
-def download_by_direct_link(url, folder):
+def download_by_direct_link(url, folder, is_pre=False):
     filename = os.path.basename(url)
     filepath = os.path.join(folder, filename)
-    status_code = download_file(url, filepath, filename)
+    status_code = download_file(url, filepath, filename, is_pre=is_pre)
     return status_code
 
 
@@ -60,10 +65,11 @@ def get_filename(url):
 
 
 def get_uncommon_media_type(filename, url, folder):
-    log('For this media_type of file we need to download additional info')
-    status = download_by_direct_link(url, folder)
+    log('For this type of file we need to download additional info')
+    status = download_by_direct_link(url, folder, is_pre=True)
     if status != 200:
         return ("broken", "")
+    log("Prepare to download media file...")
     filepath = os.path.join(folder, filename)
     with open(filepath, 'r') as f:
         readed_data = f.read()
@@ -134,7 +140,7 @@ def broken_type_handler(filename):
 def gallery_type_handler(url, folder, filename):
     print(url, folder, filename)
     log('For the gallery we need to download its pictures')
-    gallery_status = download_by_direct_link(url, folder)
+    gallery_status = download_by_direct_link(url, folder, is_pre=True)
     if gallery_status != 200:
         log("{filename} could not be downloaded."
             "Response status code is {gallery_status}",
