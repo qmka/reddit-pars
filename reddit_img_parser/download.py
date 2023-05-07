@@ -11,6 +11,7 @@ from reddit_img_parser.utils import is_reddit_gallery
 from reddit_img_parser.utils import extract_pic_links
 from reddit_img_parser.rg import is_rg
 from reddit_img_parser.rg import get_rg_id
+from reddit_img_parser.rg import get_rg_extension
 from reddit_img_parser.rg import download_rg
 
 
@@ -85,8 +86,7 @@ def get_file_media_type(filename, url, folder):
     common_extensions = ['.jpg', '.gif', '.jpeg', '.mp4', '.png']
     file_extension = os.path.splitext(filename)[1]
     readed_data = ''
-    # 3. Определяем тип файла
-    if file_extension in common_extensions:
+    if file_extension in common_extensions and not is_rg(url):
         media_type = 'common'
     elif file_extension == '.gifv':
         media_type = 'gifv'
@@ -165,7 +165,8 @@ def rg_type_handler(media_type, folder, filename, readed_data):
     #     filename=filename)
     # print("Downloading |####### no progress bar ########|")
     rg_id = get_rg_id(readed_data)
-    final_filename = f"{rg_id}.mp4"
+    rg_ex = get_rg_extension(filename)
+    final_filename = f"{rg_id}{rg_ex}"
     filepath = os.path.join(folder, final_filename)
     status = download_rg(rg_id, filepath)
     if status is True:
