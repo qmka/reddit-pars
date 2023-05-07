@@ -1,4 +1,5 @@
 import requests
+import os
 
 # from redgifs import API
 from bs4 import BeautifulSoup
@@ -23,6 +24,15 @@ def get_rg_id(file):
     link_with_id = soup.select("[rel='canonical']")[0]['href']
     id = link_with_id.split('/')[-1]
     return id
+
+
+def get_rg_extension(url):
+    common_extensions = ['.jpg', '.gif', '.jpeg', '.mp4', '.png']
+    file_extension = os.path.splitext(url)[1]
+    if file_extension in common_extensions:
+        return file_extension
+    else:
+        return '.mp4'
 
 
 '''
