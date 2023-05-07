@@ -7,14 +7,15 @@ from dotenv import load_dotenv
 
 def is_valid_reddit_instance(instance, obj_type):
     try:
-        if obj_type == 'subreddit':
+        if obj_type == 'subreddit' or obj_type == 'redditor':
             instance.id
-        elif obj_type == 'redditor':
-            instance.name
         else:
             raise ValueError("Invalid object type. "
                              "Must be either 'redditor' or 'subreddit'.")
         return True
+    except AttributeError:
+        print("AttributeError: object has no attribute 'id'")
+        return False
     except (prawcore.exceptions.Redirect,
             prawcore.exceptions.NotFound,
             prawcore.exceptions.Forbidden):

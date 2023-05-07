@@ -1,15 +1,9 @@
 from reddit_img_parser.reddit import get_reddit_entry, get_submissions
 from reddit_img_parser.app import get_submission_attrs, parse
-from reddit_img_parser.graph import load_graph, save_graph, get_nodes
-
-STATUS_NEW = 'new'
-STATUS_COMMON = 'common'
-STATUS_FAVORITE = 'favorite'
-
-ANSWER_YES = ['y', 'Y', 'yes', 'Yes']
-
-TYPE_REDDITOR = 'redditor'
-TYPE_SUBREDDIT = 'subreddit'
+from reddit_img_parser.sql import get_nodes, set_status, add_node
+from reddit_img_parser.constants import STATUS_NEW, STATUS_COMMON, STATUS_FAVORITE
+from reddit_img_parser.constants import TYPE_REDDITOR, TYPE_SUBREDDIT
+from reddit_img_parser.constants import ANSWER_YES
 
 
 def digest_ui():
@@ -19,6 +13,8 @@ def digest_ui():
     print('4. Update fav redditor files')
     print('5. Process new subreddits from database')
     print('6. Process new redditors from database')
+    print('7. Add subreddit to database')
+    print('8. Add redditor to database')
     print('0. Quit')
 
     ui_menu_choise = input('What to do? ')
@@ -33,6 +29,8 @@ def digest_ui():
         '4': lambda: download_favorites(TYPE_REDDITOR),
         '5': lambda: process_new_instances(TYPE_SUBREDDIT),
         '6': lambda: process_new_instances(TYPE_REDDITOR),
+        '7': lambda: add_instance_ui(TYPE_SUBREDDIT),
+        '8': lambda: add_instance_ui(TYPE_REDDITOR)
     }
 
     if ui_menu_choise not in menu_functions:
@@ -125,9 +123,9 @@ def seek_for_new_instances(instance_type):
         uniq_connected_instances = list(set(connected_instances))
         for instance in uniq_connected_instances:
             if connected_instance_type == TYPE_REDDITOR:
-                add_redditor(instance)
-            elif connected_instance_type == TYPE_SUBREDDIT:
-                add_subreddit(instance)
+                add_redditor(instance, STATUS_NEW)
+            elif connected_instance_type == TYPE_SUBREDDIT and instance[:3] != 't5_' and instance[:2] != 'u_':
+                add_subreddit(instance, STATUS_NEW)
         print('Done!')
 
 
@@ -138,7 +136,7 @@ def process_new_instances(instance_type):
         return
     for instance in new_instances:
         ask_to_download(instance, instance_type)
-        ask_to_set_status(instance)
+        ask_to_set_status(instance, instance_type)
 
 
 def ask_to_download(instance, instance_type):
@@ -149,78 +147,97 @@ def ask_to_download(instance, instance_type):
             'parse_type': instance_type,
             'category': 'top',
             'limit': 20,
-            'time_filter': 'week'
+            'time_filter': 'month'
         }
         parse(**params)
 
 
-def ask_to_set_status(instance):
+def ask_to_set_status(instance, instance_type):
     ui_make_fav = input(f"Change status of {instance} to favorite? (y/n) ")
     if ui_make_fav in ANSWER_YES:
-        set_status(instance, STATUS_FAVORITE)
-        print(f"The status of {instance} is set to 'New'!")
+        status = STATUS_FAVORITE
     else:
-        set_status(instance, STATUS_COMMON)
-        print(f"The status of {instance} is set to 'Common'!")
-        print("You can delete it's folder manually")
+        status = STATUS_COMMON
+    is_status_changed, message = set_status(instance_type, instance, status)
+    if is_status_changed:
+        print(f"The status of {instance} is set to '{status}'!")
+    else:
+        print(message)
 
 
-def set_status(node, status):
-    G = load_graph()
-    G.nodes[node]['attribute'] = status
-    save_graph(G)
-
-
-def get_status(node):
-    G = load_graph()
-    return G.nodes[node]['attribute']
-
-
-def add_redditor(name):
-    G = load_graph()
-    if not G.has_node(name):
-        G.add_node(name, bipartite=0)
-        G.nodes[name]['attribute'] = STATUS_NEW
-        save_graph(G)
+def add_redditor(name, status):
+    is_added = add_node(TYPE_REDDITOR, name, status)
+    if is_added:
         print(f"Redditor {name} successfully added "
-              "to database with 'new' status.")
+              f"to database with '{status}' status.")
+    return is_added
 
 
-def add_subreddit(name):
-    G = load_graph()
-    if not G.has_node(name) and name[:3] != 't5_' and name[:2] != 'u_':
-        G.add_node(name, bipartite=1)
-        G.nodes[name]['attribute'] = STATUS_NEW
-        save_graph(G)
-        print(f"Subreddit {name} successfully added "
-              "to database with 'new' status.")
+def add_instance_ui(instance_type):
+    name_ui = input(f"Type {instance_type}'s name: ")
+    while True:
+        status_ui = input("Type status: (n)ew, (f)avorite or (c)ommon: ")
+        status = get_status_from_ui(status_ui)
+        if status:
+            break
+    
+    # Check validity
+    print('Checking entry...')
+    entry = get_reddit_entry(instance_type, name_ui)
+    if not entry:
+        return
+     
+    if instance_type == TYPE_REDDITOR:
+        result = add_redditor(name_ui, status)
+    elif instance_type == TYPE_SUBREDDIT:
+        result = add_subreddit(name_ui, status)
+    
+    if not result:
+        print(f"{name_ui} is already in database")
+    
+    return
 
 
-def connect_redditor_to_subreddit(redditor, sub):
-    G = load_graph()
-    G.add_edge(redditor, sub)
-    save_graph(G)
+def get_status_from_ui(status_ui):
+    statuses = {
+        'n': STATUS_NEW,
+        'f': STATUS_FAVORITE,
+        'c': STATUS_COMMON
+    }
+    if status_ui in statuses:
+        return statuses[status_ui]
+    return None
+
+
+def add_subreddit(name, status):
+    if name[:3] != 't5_' and name[:2] != 'u_':
+        is_added = add_node(TYPE_SUBREDDIT, name, status)
+        if is_added:
+            print(f"Subreddit {name} successfully added "
+                f"to database with '{status}' status.")
+        return True
+    return False
 
 
 def get_redditors():
-    return get_nodes(bipartite=0)
+    return get_nodes(TYPE_REDDITOR)
 
 
 def get_subreddits():
-    return get_nodes(bipartite=1)
+    return get_nodes(TYPE_SUBREDDIT)
 
 
 def get_favorite_subreddits():
-    return get_nodes(attribute=STATUS_FAVORITE, bipartite=1)
+    return get_nodes(TYPE_SUBREDDIT, status=STATUS_FAVORITE)
 
 
 def get_favorite_redditors():
-    return get_nodes(attribute=STATUS_FAVORITE, bipartite=0)
+    return get_nodes(TYPE_REDDITOR, status=STATUS_FAVORITE)
 
 
 def get_new_redditors():
-    return get_nodes(attribute=STATUS_NEW, bipartite=0)
+    return get_nodes(TYPE_REDDITOR, status=STATUS_NEW)
 
 
 def get_new_subreddits():
-    return get_nodes(attribute=STATUS_NEW, bipartite=1)
+    return get_nodes(TYPE_SUBREDDIT, status=STATUS_NEW)

@@ -1,13 +1,14 @@
 from functools import reduce
 from reddit_img_parser.reddit import get_reddit_entry, get_submissions
+from reddit_img_parser.constants import TYPE_REDDITOR
 
 
 def get_key_entry(sub, type):
-    return sub.subreddit if type == 'redditor' else sub.author
+    return sub.subreddit if type == TYPE_REDDITOR else sub.author
 
 
 def get_key_name(key_entry, type):
-    return key_entry.display_name if type == 'redditor' else key_entry.name
+    return key_entry.display_name if type == TYPE_REDDITOR else key_entry.name
 
 
 def get_statistics(**params):
