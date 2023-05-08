@@ -6,6 +6,7 @@ from reddit_img_parser.sql import init_db
 from reddit_img_parser.sql import get_nodes
 from reddit_img_parser.sql import set_status
 from reddit_img_parser.sql import add_node
+from reddit_img_parser.sql import connect_nodes
 from reddit_img_parser.constants import STATUS_NEW
 from reddit_img_parser.constants import STATUS_COMMON
 from reddit_img_parser.constants import STATUS_FAVORITE
@@ -15,14 +16,20 @@ from reddit_img_parser.constants import ANSWER_YES
 
 
 def digest_ui():
-    print('1. Seek new redditors from fav subreddits')
-    print('2. Seek new subreddits from fav redditors')
-    print('3. Update fav subreddit files')
-    print('4. Update fav redditor files')
-    print('5. Process new subreddits from database')
-    print('6. Process new redditors from database')
-    print('7. Add subreddit to database')
-    print('8. Add redditor to database')
+    menu_items = [
+        'Seek new redditors from fav subreddits',
+        'Seek new subreddits from fav redditors',
+        'Seek new redditors from one subreddit',
+        'Seek new subreddits from one redditor',
+        'Update fav subreddit files',
+        'Update fav redditor files',
+        'Process new subreddits from database',
+        'Process new redditors from database',
+        'Add subreddit to database',
+        'Add redditor to database'
+    ]
+    for i in range(len(menu_items)):
+        print(f"{i + 1}. {menu_items[i]}")
     print('DB. Make empty database')
     print('0. Quit')
 
@@ -32,14 +39,16 @@ def digest_ui():
         raise SystemExit
 
     menu_functions = {
-        '1': lambda: seek_for_new_instances(TYPE_SUBREDDIT),
-        '2': lambda: seek_for_new_instances(TYPE_REDDITOR),
-        '3': lambda: download_favorites(TYPE_SUBREDDIT),
-        '4': lambda: download_favorites(TYPE_REDDITOR),
-        '5': lambda: process_new_instances(TYPE_SUBREDDIT),
-        '6': lambda: process_new_instances(TYPE_REDDITOR),
-        '7': lambda: add_instance_ui(TYPE_SUBREDDIT),
-        '8': lambda: add_instance_ui(TYPE_REDDITOR),
+        '1': lambda: seek_favorites_for_new_instances(TYPE_SUBREDDIT),
+        '2': lambda: seek_favorites_for_new_instances(TYPE_REDDITOR),
+        '3': lambda: ask_to_seek_for_connected_instances(TYPE_SUBREDDIT),
+        '4': lambda: ask_to_seek_for_connected_instances(TYPE_REDDITOR),
+        '5': lambda: download_favorites(TYPE_SUBREDDIT),
+        '6': lambda: download_favorites(TYPE_REDDITOR),
+        '7': lambda: process_new_instances(TYPE_SUBREDDIT),
+        '8': lambda: process_new_instances(TYPE_REDDITOR),
+        '9': lambda: add_instance_ui(TYPE_SUBREDDIT),
+        '10': lambda: add_instance_ui(TYPE_REDDITOR),
         'DD': lambda: make_empty_db()
     }
 
@@ -117,42 +126,71 @@ def make_connected_instances(submissions, instance_type):
     return connected_instances
 
 
-def seek_for_new_instances(instance_type):
+def ask_to_seek_for_connected_instances(instance_type):
+    name_ui = input(f"Type {instance_type}'s name: ")
+    print('Checking entry...')
+    entry = get_reddit_entry(instance_type, name_ui)
+    if not entry:
+        print(f"{name_ui} seems not valid {instance_type}")
+        return
+    get_connected_instances(name_ui, instance_type, entry)
+
+
+def get_connected_instances(instance, instance_type, entry):
+    print(f"Processing {instance}")
+    submissions_params = {
+        'entry': entry,
+        'parse_type': instance_type,
+        'category': 'top',
+        'limit': 20,
+        'time_filter': 'week'
+    }
+    submissions = get_submissions(**submissions_params)
+    connected_instances = make_connected_instances(
+        submissions,
+        instance_type
+    )
+
+    uniq_connected_instances = list(set(connected_instances))
+    connected_instance_type = get_connected_instance_type(instance_type)
+    process_connected_instances(uniq_connected_instances,
+                                connected_instance_type)
+    add_connections_to_db(instance, uniq_connected_instances)
+    return uniq_connected_instances
+    # print('Done!')
+
+
+def seek_favorites_for_new_instances(instance_type):
     print('Prepare to process...')
 
     instances = get_favorites(instance_type)
-    connected_instance_type = get_connected_instance_type(instance_type)
 
     for instance in instances:
-        print(f"Processing {instance}")
         entry = get_reddit_entry(instance_type, instance)
-        submissions_params = {
-            'entry': entry,
-            'parse_type': instance_type,
-            'category': 'top',
-            'limit': 20,
-            'time_filter': 'week'
-        }
-        submissions = get_submissions(**submissions_params)
-        connected_instances = make_connected_instances(
-            submissions,
-            instance_type
-        )
+        get_connected_instances(instance, instance_type, entry)
 
-        uniq_connected_instances = list(set(connected_instances))
-        process_connected_instances(uniq_connected_instances,
-                                    connected_instance_type)
-        print('Done!')
+
+def add_connections_to_db(basic_instance, connected_instances):
+    for conn_instance in connected_instances:
+        is_connected, message = connect_nodes(basic_instance, conn_instance)
+        if is_connected:
+            print(f"{basic_instance} connected to {conn_instance}")
 
 
 def process_connected_instances(instances, connected_instance_type):
+    there_are_connections = False
     for instance in instances:
         if connected_instance_type == TYPE_REDDITOR:
-            add_redditor(instance, STATUS_NEW)
+            is_added = add_redditor(instance, STATUS_NEW)
+            there_are_connections = is_added
         elif connected_instance_type == TYPE_SUBREDDIT and \
                 instance[:3] != 't5_' and \
                 instance[:2] != 'u_':
-            add_subreddit(instance, STATUS_NEW)
+            is_added = add_subreddit(instance, STATUS_NEW)
+            there_are_connections = is_added
+            print(is_added)
+    if not there_are_connections:
+        print(f"No new connected {connected_instance_type}s")
 
 
 def process_new_instances(instance_type):
@@ -205,7 +243,7 @@ def add_subreddit(name, status):
         if is_added:
             print(f"Subreddit {name} successfully added "
                   f"to database with '{status}' status.")
-        return True
+            return True
     return False
 
 
