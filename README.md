@@ -1,13 +1,21 @@
 [![Maintainability](https://api.codeclimate.com/v1/badges/92d18413fdc52546576d/maintainability)](https://codeclimate.com/github/qmka/reddit-pars/maintainability)
 [![flake8](https://github.com/qmka/reddit-pars/actions/workflows/flake8.yml/badge.svg)](https://github.com/qmka/reddit-pars/actions/workflows/flake8.yml)
+![GitHub](https://img.shields.io/github/license/qmka/reddit-pars)
 
 Console utility to parse media from Reddit
 
 ## Install
-You need to install [Poetry](https://python-poetry.org/docs/) package manager first. Then:
+1. First, log in to your Reddit account and register your application on the [developer page](https://www.reddit.com/prefs/apps/) to be able to use the official Reddip API. You need to get your app name, ID and secret.
+2. create a .env file in the root folder and put the following environment variables into it:
+```
+CLIENT_ID=abc123     # your Reddit APP client ID
+CLIENT_SECRET=abc123 # your Reddit APP client secret
+USER_AGENT=abs123    # your Reddit APP name
+```
+3. Install [Poetry](https://python-poetry.org/docs/) package manager.
+4. Install all dependencies:
 ```
 poetry install
-poetry run reddit-img-parser ... # look for usage section below
 ```
 
 ## Usage
