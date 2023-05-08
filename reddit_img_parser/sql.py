@@ -1,6 +1,7 @@
 import sqlite3
 from reddit_img_parser.graph import load_graph
 from reddit_img_parser.settings import DATABASE
+from reddit_img_parser.constants import TYPE_REDDITOR
 
 
 ERROR_0 = "Done."
@@ -198,7 +199,6 @@ def connect_nodes(name1, name2):
 
 
 def disconnect_nodes(name1, name2):
-
     conn = sqlite3.connect(DATABASE)
     cursor = conn.cursor()
     cursor.execute("SELECT name FROM redditors")
@@ -233,3 +233,23 @@ def disconnect_nodes(name1, name2):
     conn.commit()
     conn.close()
     return True, ERROR_0
+
+
+def get_connected_nodes(instance_type, name):
+    conn = sqlite3.connect(DATABASE)
+    cursor = conn.cursor()
+
+    if instance_type == TYPE_REDDITOR:
+        cursor.execute("SELECT subreddit_name \
+                        FROM connections \
+                        WHERE redditor_name=?",
+                       (name,))
+    else:
+        cursor.execute("SELECT redditor_name \
+                        FROM connections \
+                        WHERE subreddit_name=?",
+                       (name,))
+
+    connected_instances = [row[0] for row in cursor.fetchall()]
+    conn.close()
+    return connected_instances
