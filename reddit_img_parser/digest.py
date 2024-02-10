@@ -167,7 +167,8 @@ def seek_favorites_for_new_instances(instance_type):
 
     for instance in instances:
         entry = get_reddit_entry(instance_type, instance)
-        get_connected_instances(instance, instance_type, entry)
+        if entry:
+            get_connected_instances(instance, instance_type, entry)
 
 
 def add_connections_to_db(basic_instance, connected_instances):
