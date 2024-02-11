@@ -1,4 +1,5 @@
 import os
+import codecs
 from datetime import datetime
 from bs4 import BeautifulSoup
 from reddit_img_parser.settings import ROOT_FOLDER, FOLDER_TEMPLATE
@@ -12,7 +13,7 @@ def log(text, noprint=False, **kwargs):
     timestamp = now.strftime("[%Y-%m-%d %H:%M:%S]")
     message = text.format(**kwargs)
     log_message = f"{timestamp} {message}\n"
-    with open('parser.log', 'a') as f:
+    with codecs.open('parser.log', 'a', encoding='utf-8') as f:
         f.write(log_message)
     if not noprint:
         print(message)
